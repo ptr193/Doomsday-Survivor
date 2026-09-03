@@ -1,0 +1,68 @@
+{
+  "mutant_rat": {
+    "id": "mutant_rat", "name": "变异鼠", "level": 1, "health": 20, "max_health": 20,
+    "attack": 5, "defense": 2, "speed": 8, "exp_reward": 10, "loot_chance": 70,
+    "loot_table": {"food": [1, 1, 50], "materials": [1, 2, 30]},
+    "abilities": ["quick_bite"], "description": "受到辐射变异的老鼠，攻击性很强"
+  },
+  "radroach": {
+    "id": "radroach", "name": "辐射蟑螂", "level": 1, "health": 15, "max_health": 15,
+    "attack": 4, "defense": 3, "speed": 6, "exp_reward": 8, "loot_chance": 60,
+    "loot_table": {"materials": [1, 3, 40], "medicine": [1, 1, 20]},
+    "abilities": ["dodge"], "description": "巨大的变异蟑螂，外壳坚硬"
+  },
+  "mutant_wolf": {
+    "id": "mutant_wolf", "name": "变异狼", "level": 2, "health": 30, "max_health": 30,
+    "attack": 8, "defense": 3, "speed": 7, "exp_reward": 20, "loot_chance": 75,
+    "loot_table": {"food": [1, 2, 60], "materials": [1, 2, 40], "cloth": [1, 1, 25]},
+    "abilities": ["pounce", "howl"], "description": "凶猛的变异狼，擅长群体作战"
+  },
+  "zombie": {
+    "id": "zombie", "name": "僵尸", "level": 2, "health": 40, "max_health": 40,
+    "attack": 6, "defense": 5, "speed": 3, "exp_reward": 18, "loot_chance": 65,
+    "loot_table": {"cloth": [1, 3, 45], "materials": [1, 2, 35], "medicine": [1, 1, 15]},
+    "abilities": ["grapple", "infectious_bite"], "description": "行动缓慢但生命力顽强的僵尸"
+  },
+  "giant_spider": {
+    "id": "giant_spider", "name": "巨型蜘蛛", "level": 3, "health": 35, "max_health": 35,
+    "attack": 12, "defense": 2, "speed": 9, "exp_reward": 25, "loot_chance": 70,
+    "loot_table": {"medicine": [1, 2, 50], "rare_herbs": [1, 1, 30], "materials": [1, 3, 40]},
+    "abilities": ["web_shot", "poison_bite"], "description": "毒性强烈的巨型蜘蛛，行动敏捷"
+  },
+  "mutant_bear": {
+    "id": "mutant_bear", "name": "变异熊", "level": 4, "health": 60, "max_health": 60,
+    "attack": 15, "defense": 8, "speed": 5, "exp_reward": 40, "loot_chance": 85,
+    "loot_table": {"food": [2, 3, 70], "materials": [2, 4, 60], "rare_herbs": [1, 2, 35]},
+    "abilities": ["ferocious_charge", "roar"], "description": "巨大的变异熊，力量惊人"
+  },
+  "raider_elite": {
+    "id": "raider_elite", "name": "掠夺者精英", "level": 4, "health": 50, "max_health": 50,
+    "attack": 12, "defense": 6, "speed": 6, "exp_reward": 35, "loot_chance": 80,
+    "loot_table": {"electronic": [1, 2, 45], "materials": [2, 5, 65], "medicine": [1, 2, 40], "pistol": [1, 1, 15]},
+    "abilities": ["tactical_strike", "grenade_throw"], "description": "经验丰富的掠夺者战士，装备精良"
+  },
+  "radscorpion": {
+    "id": "radscorpion", "name": "辐射蝎子", "level": 5, "health": 55, "max_health": 55,
+    "attack": 18, "defense": 7, "speed": 4, "exp_reward": 45, "loot_chance": 80,
+    "loot_table": {"rare_minerals": [1, 2, 40], "antidote": [1, 2, 50], "materials": [3, 5, 70]},
+    "abilities": ["tail_sting", "burrow"], "description": "致命的辐射蝎子，尾刺含有剧毒"
+  },
+  "mutant_behemoth": {
+    "id": "mutant_behemoth", "name": "变异巨兽", "level": 8, "health": 150, "max_health": 150,
+    "attack": 25, "defense": 15, "speed": 3, "exp_reward": 100, "loot_chance": 95,
+    "loot_table": {"advanced_alloy": [2, 3, 80], "rare_minerals": [3, 5, 75], "ancient_artifact": [1, 1, 50], "military_ration": [3, 5, 90]},
+    "abilities": ["earth_shatter", "furious_swipe", "regenerate"], "description": "传说中的变异巨兽，拥有毁灭性的力量"
+  },
+  "raider_commander": {
+    "id": "raider_commander", "name": "掠夺者指挥官", "level": 7, "health": 120, "max_health": 120,
+    "attack": 20, "defense": 12, "speed": 6, "exp_reward": 80, "loot_chance": 90,
+    "loot_table": {"assault_rifle": [1, 1, 60], "tactical_vest": [1, 1, 70], "advanced_alloy": [1, 2, 65], "electronic": [3, 5, 85]},
+    "abilities": ["command_aura", "precision_shot", "tactical_retreat"], "description": "掠夺者组织的首领，战术大师"
+  },
+  "ghost_soldier": {
+    "id": "ghost_soldier", "name": "幽灵士兵", "level": 6, "health": 80, "max_health": 80,
+    "attack": 16, "defense": 10, "speed": 7, "exp_reward": 60, "loot_chance": 70,
+    "loot_table": {"research_data": [1, 2, 55], "map_fragment": [1, 3, 65], "advanced_alloy": [1, 1, 40]},
+    "abilities": ["phase_shift", "energy_blast", "teleport"], "description": "神秘的幽灵般存在，似乎来自另一个维度"
+  }
+}

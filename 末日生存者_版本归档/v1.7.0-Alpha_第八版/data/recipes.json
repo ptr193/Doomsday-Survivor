@@ -1,0 +1,77 @@
+{
+  "make_knife": {
+    "id": "make_knife", "name": "制作小刀", "category": "tools", "difficulty": 1,
+    "materials": {"metal": 2, "wood": 1}, "products": {"knife": 1},
+    "exp": 15, "description": "制作一把基础小刀"
+  },
+  "make_baseball_bat": {
+    "id": "make_baseball_bat", "name": "制作棒球棍", "category": "tools", "difficulty": 1,
+    "materials": {"wood": 3}, "products": {"baseball_bat": 1},
+    "exp": 10, "description": "制作一根棒球棍"
+  },
+  "make_cloth_armor": {
+    "id": "make_cloth_armor", "name": "制作布甲", "category": "armor", "difficulty": 1,
+    "materials": {"cloth": 5}, "products": {"cloth_armor": 1},
+    "exp": 20, "description": "制作基础布甲"
+  },
+  "make_leather_armor": {
+    "id": "make_leather_armor", "name": "制作皮甲", "category": "armor", "difficulty": 2,
+    "materials": {"cloth": 3, "leather": 4}, "products": {"leather_armor": 1},
+    "exp": 30, "description": "制作皮革护甲"
+  },
+  "make_bandage": {
+    "id": "make_bandage", "name": "制作绷带", "category": "medical", "difficulty": 1,
+    "materials": {"cloth": 2}, "products": {"bandage": 2},
+    "exp": 10, "description": "制作医疗绷带"
+  },
+  "make_medicine": {
+    "id": "make_medicine", "name": "制作药品", "category": "medical", "difficulty": 2,
+    "materials": {"rare_herbs": 1, "materials": 3}, "products": {"medicine": 2},
+    "exp": 25, "description": "制作基础药品"
+  },
+  "cook_food": {
+    "id": "cook_food", "name": "烹饪食物", "category": "food", "difficulty": 1,
+    "materials": {"food": 2}, "products": {"fresh_food": 1},
+    "exp": 8, "description": "烹饪新鲜食物"
+  },
+  "purify_water": {
+    "id": "purify_water", "name": "净化水", "category": "food", "difficulty": 1,
+    "materials": {"water": 3}, "products": {"clean_water": 2},
+    "exp": 5, "description": "净化饮用水"
+  },
+  "build_shelter": {
+    "id": "build_shelter", "name": "建造庇护所", "category": "construction", "difficulty": 3,
+    "materials": {"wood": 10, "cloth": 5, "materials": 8}, "products": {"shelter": 1},
+    "exp": 50, "description": "建造一个简易庇护所"
+  },
+  "make_bow": {
+    "id": "make_bow", "name": "制作弓", "category": "weapons", "difficulty": 2,
+    "materials": {"wood": 5, "rope": 2}, "products": {"bow": 1},
+    "exp": 25, "description": "制作一把弓"
+  },
+  "make_arrow": {
+    "id": "make_arrow", "name": "制作箭矢", "category": "weapons", "difficulty": 1,
+    "materials": {"wood": 1, "metal": 1}, "products": {"arrow": 5},
+    "exp": 5, "description": "制作5支箭"
+  },
+  "make_fishing_rod": {
+    "id": "make_fishing_rod", "name": "制作鱼竿", "category": "tools", "difficulty": 1,
+    "materials": {"wood": 3, "rope": 1}, "products": {"fishing_rod": 1},
+    "exp": 15, "description": "制作鱼竿"
+  },
+  "make_trap": {
+    "id": "make_trap", "name": "制作捕兽夹", "category": "tools", "difficulty": 2,
+    "materials": {"metal": 3, "wood": 2}, "products": {"trap": 1},
+    "exp": 20, "description": "制作捕兽夹"
+  },
+  "make_antiseptic": {
+    "id": "make_antiseptic", "name": "制作消毒剂", "category": "medical", "difficulty": 2,
+    "materials": {"rare_herbs": 2, "water": 1}, "products": {"antiseptic": 2},
+    "exp": 20, "description": "制作消毒剂"
+  },
+  "make_painkiller": {
+    "id": "make_painkiller", "name": "制作止痛药", "category": "medical", "difficulty": 2,
+    "materials": {"medicine": 2, "herbal_tea": 1}, "products": {"painkiller": 2},
+    "exp": 18, "description": "制作止痛药"
+  }
+}

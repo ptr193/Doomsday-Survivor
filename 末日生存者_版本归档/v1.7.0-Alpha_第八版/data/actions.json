@@ -1,0 +1,136 @@
+{
+  "explore": {
+    "name": "探索",
+    "description": "搜索当前位置的资源，可能发现物品或遇到敌人",
+    "stamina_cost": 10,
+    "time_cost": 2,
+    "skill": "survival",
+    "exp_reward": 5
+  },
+  "rest": {
+    "name": "休息",
+    "description": "休息恢复体力和生命",
+    "stamina_recovery": 30,
+    "health_recovery": 15,
+    "time_cost": 2
+  },
+  "sleep": {
+    "name": "睡觉",
+    "description": "长时间睡眠恢复状态",
+    "stamina_recovery": 50,
+    "health_recovery": 25,
+    "mental_recovery": 40,
+    "time_cost": 8
+  },
+  "eat": {
+    "name": "进食",
+    "description": "食用食物",
+    "requires_item": true,
+    "skill": "survival",
+    "exp_reward": 2
+  },
+  "drink": {
+    "name": "喝水",
+    "description": "饮用饮品",
+    "requires_item": true,
+    "skill": "survival",
+    "exp_reward": 2
+  },
+  "craft": {
+    "name": "制作",
+    "description": "使用材料制作物品",
+    "stamina_cost": 5,
+    "time_cost": 1,
+    "skill": "crafting",
+    "exp_reward": 10
+  },
+  "farm": {
+    "name": "农业",
+    "description": "种植收获农作物",
+    "stamina_cost": 15,
+    "time_cost": 2,
+    "skill": "farming",
+    "exp_reward": 8
+  },
+  "move": {
+    "name": "移动",
+    "description": "移动到相邻地点",
+    "stamina_cost": 5,
+    "time_cost": 0.5,
+    "skill": "survival",
+    "exp_reward": 1
+  },
+  "fish": {
+    "name": "钓鱼",
+    "description": "在水边钓鱼获取食物",
+    "stamina_cost": 8,
+    "time_cost": 2,
+    "skill": "survival",
+    "exp_reward": 6,
+    "requires_tool": "fishing_rod",
+    "requires_terrain": ["河流", "湖泊"]
+  },
+  "hunt": {
+    "name": "狩猎",
+    "description": "在森林或平原狩猎动物",
+    "stamina_cost": 15,
+    "time_cost": 3,
+    "skill": "combat",
+    "exp_reward": 12,
+    "requires_weapon": true,
+    "requires_terrain": ["森林", "平原"]
+  },
+  "chop_wood": {
+    "name": "砍柴",
+    "description": "收集木材",
+    "stamina_cost": 12,
+    "time_cost": 2,
+    "skill": "survival",
+    "exp_reward": 4,
+    "requires_terrain": ["森林"]
+  },
+  "gather_herbs": {
+    "name": "采药",
+    "description": "采集草药",
+    "stamina_cost": 8,
+    "time_cost": 2,
+    "skill": "medical",
+    "exp_reward": 8,
+    "requires_terrain": ["森林", "山地"]
+  },
+  "trade": {
+    "name": "交易",
+    "description": "与NPC交易",
+    "requires_npc": true,
+    "time_cost": 1,
+    "skill": "social",
+    "exp_reward": 5
+  },
+  "repair": {
+    "name": "修理",
+    "description": "修理装备",
+    "stamina_cost": 10,
+    "time_cost": 2,
+    "skill": "crafting",
+    "exp_reward": 8,
+    "requires_item": true
+  },
+  "research": {
+    "name": "研究",
+    "description": "研究科技",
+    "stamina_cost": 5,
+    "time_cost": 3,
+    "skill": "intelligence",
+    "exp_reward": 15,
+    "requires_material": ["research_data"]
+  },
+  "meditate": {
+    "name": "冥想",
+    "description": "恢复精神",
+    "stamina_cost": 2,
+    "time_cost": 1,
+    "skill": "mental",
+    "exp_reward": 3,
+    "mental_recovery": 15
+  }
+}

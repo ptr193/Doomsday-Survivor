@@ -1,0 +1,182 @@
+{
+  "old_farmer": {
+    "id": "old_farmer", "name": "老农民张大爷", "faction": "survivors",
+    "location": "abandoned_farm", "type": "quest_giver",
+    "description": "经验丰富的老农民，一直在努力恢复农业生产",
+    "dialogue": {
+      "greeting": "年轻人，看来你也是个懂得土地价值的人。",
+      "farewell": "小心那些变异生物，它们最近很活跃。",
+      "topics": {
+        "farming": "土地是我们的根本，没有粮食什么都谈不上。",
+        "survival": "我经历过最艰难的日子，但只要不放弃，总有希望。",
+        "threats": "晚上最好不要出门，有些东西在黑暗中游荡..."
+      }
+    },
+    "services": ["quests", "farming_tips"],
+    "quests": ["side_01"],
+    "shop": null,
+    "reputation_required": 0
+  },
+  "doctor_li": {
+    "id": "doctor_li", "name": "李医生", "faction": "survivors",
+    "location": "starting_area", "type": "healer",
+    "description": "前医院医生，现在为幸存者提供医疗服务",
+    "dialogue": {
+      "greeting": "你好，需要医疗帮助吗？",
+      "farewell": "保持健康，这个世界需要每一个幸存者。",
+      "topics": {
+        "medicine": "药品很稀缺，我们必须谨慎使用。",
+        "injuries": "我见过太多因为小伤口感染而失去的生命。",
+        "radiation": "辐射病的症状很隐蔽，要定期检查。"
+      }
+    },
+    "services": ["healing", "quests", "medical_supplies"],
+    "quests": ["side_02"],
+    "shop": "medical_shop",
+    "reputation_required": 10
+  },
+  "security_chief": {
+    "id": "security_chief", "name": "王队长", "faction": "survivors",
+    "location": "survivor_camp", "type": "guard",
+    "description": "前警察，负责营地的安全工作",
+    "dialogue": {
+      "greeting": "保持警惕，这里并不安全。",
+      "farewell": "如果你看到任何异常，立即报告。",
+      "topics": {
+        "security": "我们人手不足，每个人都必须参与防卫。",
+        "raiders": "那些掠夺者越来越猖狂了。",
+        "weapons": "好的武器能让你活得更久。"
+      }
+    },
+    "services": ["quests", "security_tips", "weapon_training"],
+    "quests": ["side_03"],
+    "shop": null,
+    "reputation_required": 20
+  },
+  "master_crafter": {
+    "id": "master_crafter", "name": "工匠大师", "faction": "survivors",
+    "location": "trading_post", "type": "crafter",
+    "description": "技艺精湛的工匠，能制作各种物品",
+    "dialogue": {
+      "greeting": "需要制作什么吗？我的手艺可是一流的。",
+      "farewell": "材料要好好保管，都是宝贵的资源。",
+      "topics": {
+        "crafting": "好的工具能让工作事半功倍。",
+        "materials": "我认识每一种材料的特性。",
+        "repair": "修复比制作更需要技巧。"
+      }
+    },
+    "services": ["crafting", "quests", "repair"],
+    "quests": ["craft_01"],
+    "shop": "crafting_shop",
+    "reputation_required": 15
+  },
+  "cartographer": {
+    "id": "cartographer", "name": "地图绘制师", "faction": "survivors",
+    "location": "survivor_camp", "type": "explorer",
+    "description": "专注于绘制世界地图的探险家",
+    "dialogue": {
+      "greeting": "你对这个世界了解多少？",
+      "farewell": "小心探索，安全第一。",
+      "topics": {
+        "exploration": "每个角落都可能隐藏着秘密。",
+        "maps": "一张好地图能救你的命。",
+        "locations": "我记录了上百个重要地点。"
+      }
+    },
+    "services": ["quests", "map_info", "location_tips"],
+    "quests": ["explore_01"],
+    "shop": null,
+    "reputation_required": 5
+  },
+  "wandering_merchant": {
+    "id": "wandering_merchant", "name": "流浪商人卡尔", "faction": "traders",
+    "location": "random", "type": "merchant",
+    "description": "四处旅行的商人，商品种类丰富",
+    "dialogue": {
+      "greeting": "来看看我的货物吧，都是好东西！",
+      "farewell": "下次见，希望你还活着。",
+      "topics": {
+        "trade": "公平交易，童叟无欺。",
+        "prices": "价格随供求变化，你懂的。",
+        "rumors": "我听到一些有趣的消息..."
+      }
+    },
+    "services": ["trade", "information"],
+    "quests": [],
+    "shop": "general_shop",
+    "reputation_required": 0
+  },
+  "weapon_dealer": {
+    "id": "weapon_dealer", "name": "军火商文森特", "faction": "traders",
+    "location": "trading_post", "type": "merchant",
+    "description": "专营武器和装备的商人",
+    "dialogue": {
+      "greeting": "需要保护自己吗？我这里有好东西。",
+      "farewell": "记住，武器只是工具，人才是关键。",
+      "topics": {
+        "weapons": "我这里的武器都是精品。",
+        "defense": "好的防具比武器更重要。",
+        "ammo": "没有弹药的枪还不如一根棍子。"
+      }
+    },
+    "services": ["trade", "weapon_info"],
+    "quests": [],
+    "shop": "weapon_shop",
+    "reputation_required": 25
+  },
+  "mad_scientist": {
+    "id": "mad_scientist", "name": "疯狂科学家", "faction": "tech_cult",
+    "location": "research_lab", "type": "researcher",
+    "description": "行为古怪但知识渊博的科学家",
+    "dialogue": {
+      "greeting": "啊！一个新的测试对象...我是说，访客！",
+      "farewell": "科学万岁！",
+      "topics": {
+        "technology": "科技能解决所有问题，包括这个末日。",
+        "research": "我的研究即将突破！",
+        "radiation": "辐射不是诅咒，而是机遇！"
+      }
+    },
+    "services": ["research", "tech_items", "radiation_treatment"],
+    "quests": [],
+    "shop": "tech_shop",
+    "reputation_required": 30
+  },
+  "mysterious_stranger": {
+    "id": "mysterious_stranger", "name": "神秘陌生人", "faction": "neutral",
+    "location": "random", "type": "special",
+    "description": "身份不明的旅行者，似乎知道很多秘密",
+    "dialogue": {
+      "greeting": "你不该来这里...但既然来了，也许能帮上忙。",
+      "farewell": "小心你信任的人，这个世界已经变了。",
+      "topics": {
+        "secrets": "有些真相还是不知道为好。",
+        "prophecy": "星星在移动，平衡正在改变...",
+        "warning": "不要相信你看到的一切。"
+      }
+    },
+    "services": ["information", "special_quests"],
+    "quests": [],
+    "shop": null,
+    "reputation_required": 50
+  },
+  "hermit": {
+    "id": "hermit", "name": "山中隐士", "faction": "neutral",
+    "location": "mountain_path", "type": "teacher",
+    "description": "独自生活在山中的智者",
+    "dialogue": {
+      "greeting": "很少有人能找到这里。",
+      "farewell": "愿自然之力保护你。",
+      "topics": {
+        "nature": "大自然在自我修复，人类只是过客。",
+        "survival": "真正的生存技巧来自对自然的理解。",
+        "meditation": "内心的平静比任何武器都强大。"
+      }
+    },
+    "services": ["training", "survival_tips", "meditation"],
+    "quests": [],
+    "shop": null,
+    "reputation_required": 40
+  }
+}

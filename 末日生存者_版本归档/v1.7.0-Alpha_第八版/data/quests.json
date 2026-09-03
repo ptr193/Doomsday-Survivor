@@ -1,0 +1,93 @@
+{
+  "main_01": {
+    "id": "main_01", "name": "初来乍到", "category": "main", "difficulty": 1,
+    "description": "在这个陌生的世界中生存下来，学习基本的生存技能。",
+    "objectives": [
+      {"id": "explore_start", "description": "探索起始区域", "type": "explore_location", "target": "starting_area", "required": 1, "current": 0},
+      {"id": "collect", "description": "收集5个基础物资", "type": "collect_items", "target": "materials", "required": 5, "current": 0},
+      {"id": "craft", "description": "制作第一个物品", "type": "craft_item", "target": "any", "required": 1, "current": 0}
+    ],
+    "prerequisites": [],
+    "rewards": {"exp": 100, "items": {"food": 5, "water": 5, "materials": 10}, "money": 50, "unlocks": ["main_02"]},
+    "time_limit": null, "repeatable": false, "giver_npc": "system",
+    "story_text": "在这个破碎的世界中，每一个幸存者都要从零开始。"
+  },
+  "main_02": {
+    "id": "main_02", "name": "建立据点", "category": "main", "difficulty": 2,
+    "description": "找到一个安全的场所建立你的第一个庇护所。",
+    "objectives": [
+      {"id": "disc_safe", "description": "发现3个安全地点（安全等级≥7）", "type": "discover_locations", "target": "safe", "required": 3, "current": 0},
+      {"id": "build", "description": "建造一个简易庇护所", "type": "craft_item", "target": "shelter", "required": 1, "current": 0},
+      {"id": "store", "description": "储备10个食物和10个水", "type": "collect_items", "target": "food_water", "required": 20, "current": 0}
+    ],
+    "prerequisites": ["main_01"],
+    "rewards": {"exp": 200, "items": {"cloth_armor": 1, "knife": 1}, "money": 100, "unlocks": ["main_03"]},
+    "time_limit": null, "repeatable": false, "giver_npc": "system"
+  },
+  "main_03": {
+    "id": "main_03", "name": "寻找其他幸存者", "category": "main", "difficulty": 3,
+    "description": "在这个孤独的世界中，找到其他幸存者建立联系。",
+    "objectives": [
+      {"id": "meet", "description": "遇到3个不同的NPC", "type": "meet_npcs", "target": "any", "required": 3, "current": 0},
+      {"id": "quest", "description": "完成一个幸存者给予的任务", "type": "complete_quests", "target": "side", "required": 1, "current": 0},
+      {"id": "trade", "description": "与商人进行交易", "type": "trade", "target": "any", "required": 1, "current": 0}
+    ],
+    "prerequisites": ["main_02"],
+    "rewards": {"exp": 300, "items": {"map_fragment": 2, "medicine": 3}, "money": 150, "unlocks": ["main_04"]},
+    "time_limit": null, "repeatable": false, "giver_npc": "system"
+  },
+  "side_01": {
+    "id": "side_01", "name": "老农的请求", "category": "side", "difficulty": 2,
+    "description": "帮助老农民恢复他的农田。",
+    "objectives": [
+      {"id": "clear_weeds", "description": "清除农田里的杂草", "type": "farm_action", "target": "remove_weeds", "required": 3, "current": 0},
+      {"id": "plant_crops", "description": "种植2种不同的作物", "type": "plant_crops", "target": "any", "required": 2, "current": 0},
+      {"id": "harvest_crops", "description": "收获5个农作物", "type": "harvest_crops", "target": "any", "required": 5, "current": 0}
+    ],
+    "prerequisites": [],
+    "rewards": {"exp": 150, "items": {"vegetable_seeds": 5, "fresh_food": 3}, "money": 80, "reputation": {"survivors": 10}},
+    "time_limit": 7, "repeatable": false, "giver_npc": "old_farmer"
+  },
+  "side_02": {
+    "id": "side_02", "name": "医生的困境", "category": "side", "difficulty": 3,
+    "description": "为诊所收集急需的医疗物资。",
+    "objectives": [
+      {"id": "collect_medicine", "description": "收集5个药品", "type": "collect_items", "target": "medicine", "required": 5, "current": 0},
+      {"id": "find_herbs", "description": "找到3个稀有草药", "type": "collect_items", "target": "rare_herbs", "required": 3, "current": 0},
+      {"id": "deliver", "description": "将物资送到诊所", "type": "deliver_items", "target": "clinic", "required": 1, "current": 0}
+    ],
+    "prerequisites": ["main_03"],
+    "rewards": {"exp": 200, "items": {"first_aid_kit": 1, "antidote": 2}, "money": 120, "reputation": {"survivors": 15}, "unlocks": ["side_03"]},
+    "time_limit": 5, "repeatable": false, "giver_npc": "doctor_li"
+  },
+  "daily_01": {
+    "id": "daily_01", "name": "日常收集", "category": "daily", "difficulty": 1,
+    "description": "收集一些基础生存物资。",
+    "objectives": [{"id": "collect", "description": "收集10个材料", "type": "collect_items", "target": "materials", "required": 10, "current": 0}],
+    "prerequisites": [], "rewards": {"exp": 50, "items": {"food": 2, "water": 2}, "money": 30},
+    "time_limit": 1, "repeatable": true, "giver_npc": "system"
+  },
+  "explore_01": {
+    "id": "explore_01", "name": "地图绘制者", "category": "exploration", "difficulty": 2,
+    "description": "探索未知区域，完善世界地图。",
+    "objectives": [
+      {"id": "discover", "description": "发现5个新地点", "type": "discover_locations", "target": "any", "required": 5, "current": 0},
+      {"id": "collect_maps", "description": "收集3个地图碎片", "type": "collect_items", "target": "map_fragment", "required": 3, "current": 0}
+    ],
+    "prerequisites": ["main_01"],
+    "rewards": {"exp": 180, "items": {"advanced_map": 1}, "money": 100, "unlocks": ["explore_02"]},
+    "time_limit": null, "repeatable": false, "giver_npc": "cartographer"
+  },
+  "craft_01": {
+    "id": "craft_01", "name": "工匠的试炼", "category": "crafting", "difficulty": 3,
+    "description": "证明你的制作技能，制作一些高级物品。",
+    "objectives": [
+      {"id": "craft_weapon", "description": "制作一把武器", "type": "craft_item", "target": "weapon", "required": 1, "current": 0},
+      {"id": "craft_armor", "description": "制作一件防具", "type": "craft_item", "target": "armor", "required": 1, "current": 0},
+      {"id": "craft_tool", "description": "制作一个工具", "type": "craft_item", "target": "tool", "required": 1, "current": 0}
+    ],
+    "prerequisites": ["main_02"],
+    "rewards": {"exp": 220, "items": {"advanced_tools": 1}, "money": 150, "reputation": {"craftsmen": 20}},
+    "time_limit": null, "repeatable": false, "giver_npc": "master_crafter"
+  }
+}

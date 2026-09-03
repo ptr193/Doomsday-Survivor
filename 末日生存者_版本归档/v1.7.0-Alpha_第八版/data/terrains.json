@@ -1,0 +1,42 @@
+{
+  "plain": {
+    "name": "平原",
+    "description": "开阔的平原",
+    "resources": {"food": 0.4, "water": 0.2, "materials": 0.3},
+    "enemies": ["mutant_rat", "radroach"],
+    "safety": 6,
+    "color": "#a7c5a3"
+  },
+  "forest": {
+    "name": "森林",
+    "description": "茂密的森林",
+    "resources": {"wood": 0.5, "medicine": 0.2, "rare_herbs": 0.1},
+    "enemies": ["mutant_wolf", "giant_spider"],
+    "safety": 4,
+    "color": "#2d6a4f"
+  },
+  "mountain": {
+    "name": "山地",
+    "description": "崎岖的山地",
+    "resources": {"stone": 0.6, "rare_minerals": 0.2},
+    "enemies": ["mutant_bear", "radscorpion"],
+    "safety": 5,
+    "color": "#8d6b63"
+  },
+  "river": {
+    "name": "河流",
+    "description": "清澈的河流",
+    "resources": {"water": 0.7, "food": 0.3},
+    "enemies": ["mutant_rat", "zombie"],
+    "safety": 7,
+    "color": "#4ea8de"
+  },
+  "urban": {
+    "name": "城市废墟",
+    "description": "倒塌的建筑",
+    "resources": {"materials": 0.5, "electronic": 0.3, "cloth": 0.2},
+    "enemies": ["raider_elite", "ghost_soldier"],
+    "safety": 3,
+    "color": "#4a6e8c"
+  }
+}

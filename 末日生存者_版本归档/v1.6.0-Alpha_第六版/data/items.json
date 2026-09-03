@@ -1,0 +1,456 @@
+{
+  "items": {
+    "food": {
+      "id": "food", "name": "食物", "type": "food",
+      "description": "基本的食物，可以充饥", "health_restore": 10, "stamina_restore": 5,
+      "weight": 0.5, "value": 5, "stackable": true, "max_stack": 20
+    },
+    "fresh_food": {
+      "id": "fresh_food", "name": "新鲜食物", "type": "food",
+      "description": "新鲜的食物，营养价值更高", "health_restore": 20, "stamina_restore": 10, "mental_restore": 5,
+      "weight": 0.5, "value": 10, "stackable": true, "max_stack": 10
+    },
+    "canned_food": {
+      "id": "canned_food", "name": "罐头食品", "type": "food",
+      "description": "密封保存的罐头，保质期长", "health_restore": 15, "stamina_restore": 8,
+      "weight": 1.0, "value": 8, "stackable": true, "max_stack": 15
+    },
+    "military_ration": {
+      "id": "military_ration", "name": "军用口粮", "type": "food",
+      "description": "高能量的军用口粮", "health_restore": 25, "stamina_restore": 20, "mental_restore": 10,
+      "weight": 0.8, "value": 15, "stackable": true, "max_stack": 10
+    },
+    "energy_bar": {
+      "id": "energy_bar", "name": "能量棒", "type": "food",
+      "description": "快速补充能量的食品", "health_restore": 5, "stamina_restore": 30,
+      "weight": 0.2, "value": 12, "stackable": true, "max_stack": 25
+    },
+    "apple": {
+      "id": "apple", "name": "苹果", "type": "food",
+      "description": "新鲜的水果，补充维生素", "health_restore": 8, "stamina_restore": 4, "mental_restore": 2,
+      "weight": 0.2, "value": 4, "stackable": true, "max_stack": 20
+    },
+    "bread": {
+      "id": "bread", "name": "面包", "type": "food",
+      "description": "主食，提供能量", "health_restore": 12, "stamina_restore": 10,
+      "weight": 0.3, "value": 6, "stackable": true, "max_stack": 15
+    },
+    "jerky": {
+      "id": "jerky", "name": "肉干", "type": "food",
+      "description": "高蛋白食物，耐储存", "health_restore": 15, "stamina_restore": 12,
+      "weight": 0.2, "value": 8, "stackable": true, "max_stack": 20
+    },
+    "mushroom_soup": {
+      "id": "mushroom_soup", "name": "蘑菇汤", "type": "food",
+      "description": "热汤，温暖身心", "health_restore": 10, "stamina_restore": 8, "mental_restore": 12,
+      "weight": 0.5, "value": 10, "stackable": true, "max_stack": 10
+    },
+    "water": {
+      "id": "water", "name": "水", "type": "drink",
+      "description": "干净的水源", "stamina_restore": 15,
+      "weight": 1.0, "value": 3, "stackable": true, "max_stack": 10
+    },
+    "clean_water": {
+      "id": "clean_water", "name": "纯净水", "type": "drink",
+      "description": "经过净化的纯净水", "stamina_restore": 25, "health_restore": 5,
+      "weight": 1.0, "value": 6, "stackable": true, "max_stack": 10
+    },
+    "energy_drink": {
+      "id": "energy_drink", "name": "能量饮料", "type": "drink",
+      "description": "提神醒脑的功能饮料", "stamina_restore": 40, "mental_restore": 10,
+      "caffeine": 1, "addictive": true, "weight": 0.5, "value": 15, "stackable": true, "max_stack": 8
+    },
+    "herbal_tea": {
+      "id": "herbal_tea", "name": "草药茶", "type": "drink",
+      "description": "用草药泡制的茶，有治疗效果", "health_restore": 10, "mental_restore": 20,
+      "weight": 0.3, "value": 8, "stackable": true, "max_stack": 12
+    },
+    "coffee": {
+      "id": "coffee", "name": "咖啡", "type": "drink",
+      "description": "热咖啡，提神效果明显", "stamina_restore": 25, "mental_restore": 15,
+      "caffeine": 2, "addictive": true, "weight": 0.3, "value": 10, "stackable": true, "max_stack": 10
+    },
+    "berry_juice": {
+      "id": "berry_juice", "name": "浆果汁", "type": "drink",
+      "description": "酸甜解渴", "stamina_restore": 18, "mental_restore": 8,
+      "weight": 0.4, "value": 7, "stackable": true, "max_stack": 12
+    },
+    "materials": {
+      "id": "materials", "name": "材料", "type": "material",
+      "description": "基础制作材料", "weight": 1.0, "value": 2, "stackable": true, "max_stack": 50
+    },
+    "wood": {
+      "id": "wood", "name": "木材", "type": "material",
+      "description": "可用于建造和燃料", "weight": 2.0, "value": 1, "stackable": true, "max_stack": 30
+    },
+    "metal": {
+      "id": "metal", "name": "金属", "type": "material",
+      "description": "金属材料，用于制作工具和武器", "weight": 3.0, "value": 5, "stackable": true, "max_stack": 20
+    },
+    "cloth": {
+      "id": "cloth", "name": "布料", "type": "material",
+      "description": "纺织品，用于制作衣物", "weight": 0.5, "value": 3, "stackable": true, "max_stack": 25
+    },
+    "electronic": {
+      "id": "electronic", "name": "电子元件", "type": "material",
+      "description": "电子设备零件", "weight": 0.3, "value": 8, "stackable": true, "max_stack": 15
+    },
+    "advanced_alloy": {
+      "id": "advanced_alloy", "name": "高级合金", "type": "material",
+      "description": "高性能合金材料", "weight": 2.0, "value": 20, "stackable": true, "max_stack": 10
+    },
+    "stone": {
+      "id": "stone", "name": "石头", "type": "material",
+      "description": "基础建筑材料", "weight": 4.0, "value": 1, "stackable": true, "max_stack": 25
+    },
+    "plastic": {
+      "id": "plastic", "name": "塑料", "type": "material",
+      "description": "塑料材料，用途广泛", "weight": 0.5, "value": 2, "stackable": true, "max_stack": 30
+    },
+    "leather": {
+      "id": "leather", "name": "皮革", "type": "material",
+      "description": "动物皮毛加工而成", "weight": 1.0, "value": 8, "stackable": true, "max_stack": 20
+    },
+    "charcoal": {
+      "id": "charcoal", "name": "木炭", "type": "material",
+      "description": "燃料和过滤材料", "weight": 0.5, "value": 3, "stackable": true, "max_stack": 30
+    },
+    "glass_shard": {
+      "id": "glass_shard", "name": "玻璃碎片", "type": "material",
+      "description": "锋利的玻璃碎片", "weight": 0.1, "value": 1, "stackable": true, "max_stack": 40
+    },
+    "rubber": {
+      "id": "rubber", "name": "橡胶", "type": "material",
+      "description": "弹性材料", "weight": 0.3, "value": 5, "stackable": true, "max_stack": 25
+    },
+    "rope": {
+      "id": "rope", "name": "绳索", "type": "material",
+      "description": "实用工具", "weight": 0.5, "value": 6, "stackable": true, "max_stack": 15
+    },
+    "medicine": {
+      "id": "medicine", "name": "药品", "type": "medicine",
+      "description": "基础医疗用品", "health_restore": 20,
+      "weight": 0.3, "value": 10, "stackable": true, "max_stack": 15
+    },
+    "bandage": {
+      "id": "bandage", "name": "绷带", "type": "medicine",
+      "description": "用于止血和包扎伤口", "health_restore": 15,
+      "weight": 0.2, "value": 5, "stackable": true, "max_stack": 20
+    },
+    "antidote": {
+      "id": "antidote", "name": "解毒剂", "type": "medicine",
+      "description": "解除中毒状态", "health_restore": 10, "special_effect": "cure_poison",
+      "weight": 0.3, "value": 15, "stackable": true, "max_stack": 10
+    },
+    "antidepressant": {
+      "id": "antidepressant", "name": "抗抑郁药", "type": "medicine",
+      "description": "缓解精神压力", "mental_restore": 30, "addictive": true,
+      "weight": 0.2, "value": 12, "stackable": true, "max_stack": 8
+    },
+    "first_aid_kit": {
+      "id": "first_aid_kit", "name": "急救包", "type": "medicine",
+      "description": "完整的急救用品", "health_restore": 50, "mental_restore": 10,
+      "weight": 1.0, "value": 25, "stackable": true, "max_stack": 5
+    },
+    "radiation_pills": {
+      "id": "radiation_pills", "name": "抗辐射药", "type": "medicine",
+      "description": "减少辐射伤害", "special_effect": "reduce_radiation", "addictive": true,
+      "weight": 0.1, "value": 20, "stackable": true, "max_stack": 12
+    },
+    "herbal_tonic": {
+      "id": "herbal_tonic", "name": "草药补剂", "type": "medicine",
+      "description": "增强体质", "health_restore": 25, "stamina_restore": 20,
+      "weight": 0.2, "value": 25, "stackable": true, "max_stack": 8, "addictive": false
+    },
+    "antiseptic": {
+      "id": "antiseptic", "name": "消毒剂", "type": "medicine",
+      "description": "消毒伤口", "health_restore": 10, "special_effect": "prevent_infection",
+      "weight": 0.2, "value": 12, "stackable": true, "max_stack": 10
+    },
+    "painkiller": {
+      "id": "painkiller", "name": "止痛药", "type": "medicine",
+      "description": "缓解疼痛", "mental_restore": 15, "addictive": true,
+      "weight": 0.1, "value": 18, "stackable": true, "max_stack": 15
+    },
+    "antibiotics": {
+      "id": "antibiotics", "name": "抗生素", "type": "medicine",
+      "description": "治疗感染", "health_restore": 20, "special_effect": "cure_infection",
+      "weight": 0.2, "value": 25, "stackable": true, "max_stack": 10
+    },
+    "seeds": {
+      "id": "seeds", "name": "种子", "type": "seed",
+      "description": "农作物种子", "weight": 0.1, "value": 2, "stackable": true, "max_stack": 50
+    },
+    "vegetable_seeds": {
+      "id": "vegetable_seeds", "name": "蔬菜种子", "type": "seed",
+      "description": "各种蔬菜种子", "weight": 0.1, "value": 3, "stackable": true, "max_stack": 40
+    },
+    "grain_seeds": {
+      "id": "grain_seeds", "name": "谷物种子", "type": "seed",
+      "description": "粮食作物种子", "weight": 0.2, "value": 4, "stackable": true, "max_stack": 30
+    },
+    "herb_seeds": {
+      "id": "herb_seeds", "name": "草药种子", "type": "seed",
+      "description": "药用植物种子", "weight": 0.1, "value": 5, "stackable": true, "max_stack": 25
+    },
+    "knife": {
+      "id": "knife", "name": "小刀", "type": "weapon", "equip_slot": "weapon",
+      "description": "基础近战武器", "damage": 8, "durability": 50,
+      "weight": 1.0, "value": 15, "effects": [{"type": "stat_bonus", "stat": "strength", "value": 1}]
+    },
+    "baseball_bat": {
+      "id": "baseball_bat", "name": "棒球棍", "type": "weapon", "equip_slot": "weapon",
+      "description": "钝器武器，击打效果好", "damage": 12, "durability": 40,
+      "weight": 2.0, "value": 10, "effects": [{"type": "stat_bonus", "stat": "strength", "value": 2}]
+    },
+    "pistol": {
+      "id": "pistol", "name": "手枪", "type": "weapon", "equip_slot": "weapon",
+      "description": "基础枪械武器", "damage": 20, "durability": 30,
+      "weight": 1.5, "value": 50, "ammo_type": "9mm",
+      "effects": [{"type": "stat_bonus", "stat": "agility", "value": 1}]
+    },
+    "shotgun": {
+      "id": "shotgun", "name": "霰弹枪", "type": "weapon", "equip_slot": "weapon",
+      "description": "近距离高伤害武器", "damage": 35, "durability": 25,
+      "weight": 3.0, "value": 80, "ammo_type": "shells",
+      "effects": [{"type": "stat_bonus", "stat": "strength", "value": 2}]
+    },
+    "assault_rifle": {
+      "id": "assault_rifle", "name": "突击步枪", "type": "weapon", "equip_slot": "weapon",
+      "description": "全自动步枪，火力强大", "damage": 25, "durability": 40,
+      "weight": 3.5, "value": 120, "ammo_type": "5.56mm",
+      "effects": [{"type": "stat_bonus", "stat": "agility", "value": 2}, {"type": "stat_bonus", "stat": "strength", "value": 1}]
+    },
+    "bow": {
+      "id": "bow", "name": "弓", "type": "weapon", "equip_slot": "weapon",
+      "description": "远程武器", "damage": 15, "durability": 40,
+      "weight": 1.2, "value": 35, "effects": [{"type": "stat_bonus", "stat": "agility", "value": 2}]
+    },
+    "hunting_knife": {
+      "id": "hunting_knife", "name": "猎刀", "type": "weapon", "equip_slot": "weapon",
+      "description": "锋利的猎刀，适合剥皮和战斗", "damage": 10, "durability": 60,
+      "weight": 0.8, "value": 25, "effects": [{"type": "stat_bonus", "stat": "strength", "value": 1}]
+    },
+    "arrow": {
+      "id": "arrow", "name": "箭矢", "type": "ammo",
+      "description": "弓箭弹药", "weight": 0.1, "value": 2,
+      "stackable": true, "max_stack": 50
+    },
+    "cloth_armor": {
+      "id": "cloth_armor", "name": "布甲", "type": "armor", "equip_slot": "chest",
+      "description": "基础防护服装", "defense": 5, "durability": 30,
+      "weight": 2.0, "value": 20, "effects": [{"type": "stat_bonus", "stat": "endurance", "value": 1}]
+    },
+    "leather_armor": {
+      "id": "leather_armor", "name": "皮甲", "type": "armor", "equip_slot": "chest",
+      "description": "皮革制成的护甲", "defense": 8, "durability": 40,
+      "weight": 3.0, "value": 35, "effects": [{"type": "stat_bonus", "stat": "endurance", "value": 2}, {"type": "stat_bonus", "stat": "agility", "value": 1}]
+    },
+    "metal_armor": {
+      "id": "metal_armor", "name": "金属护甲", "type": "armor", "equip_slot": "chest",
+      "description": "金属板制成的重甲", "defense": 15, "durability": 50,
+      "weight": 8.0, "value": 60, "effects": [{"type": "stat_bonus", "stat": "endurance", "value": 3}, {"type": "stat_bonus", "stat": "strength", "value": 1}]
+    },
+    "tactical_vest": {
+      "id": "tactical_vest", "name": "战术背心", "type": "armor", "equip_slot": "chest",
+      "description": "军用战术装备", "defense": 12, "durability": 45,
+      "weight": 4.0, "value": 80, "effects": [{"type": "stat_bonus", "stat": "endurance", "value": 2}, {"type": "stat_bonus", "stat": "agility", "value": 2}]
+    },
+    "leather_vest": {
+      "id": "leather_vest", "name": "皮背心", "type": "armor", "equip_slot": "chest",
+      "description": "轻便防护", "defense": 6, "durability": 35,
+      "weight": 1.5, "value": 30, "effects": [{"type": "stat_bonus", "stat": "agility", "value": 1}]
+    },
+    "cloth_helmet": {
+      "id": "cloth_helmet", "name": "布帽", "type": "helmet", "equip_slot": "head",
+      "description": "基础头部防护", "defense": 3, "durability": 25,
+      "weight": 0.5, "value": 10, "effects": [{"type": "stat_bonus", "stat": "endurance", "value": 1}]
+    },
+    "metal_helmet": {
+      "id": "metal_helmet", "name": "金属头盔", "type": "helmet", "equip_slot": "head",
+      "description": "保护头部", "defense": 8, "durability": 40,
+      "weight": 2.0, "value": 40, "effects": [{"type": "stat_bonus", "stat": "endurance", "value": 2}]
+    },
+    "small_backpack": {
+      "id": "small_backpack", "name": "小背包", "type": "backpack", "equip_slot": "backpack",
+      "description": "增加携带容量", "capacity_bonus": 10,
+      "weight": 1.0, "value": 15, "effects": [{"type": "carry_capacity", "value": 10}]
+    },
+    "hiking_backpack": {
+      "id": "hiking_backpack", "name": "登山包", "type": "backpack", "equip_slot": "backpack",
+      "description": "大容量背包", "capacity_bonus": 25,
+      "weight": 2.0, "value": 40, "effects": [{"type": "carry_capacity", "value": 25}]
+    },
+    "military_backpack": {
+      "id": "military_backpack", "name": "军用背包", "type": "backpack", "equip_slot": "backpack",
+      "description": "专业军用背包", "capacity_bonus": 40,
+      "weight": 3.0, "value": 80, "effects": [{"type": "carry_capacity", "value": 40}, {"type": "stat_bonus", "stat": "endurance", "value": 1}]
+    },
+    "fishing_rod": {
+      "id": "fishing_rod", "name": "鱼竿", "type": "tool", "equip_slot": "tool",
+      "description": "用于钓鱼", "durability": 50, "weight": 1.0, "value": 20,
+      "effects": [{"type": "skill_bonus", "skill": "survival", "value": 2}]
+    },
+    "water_purifier": {
+      "id": "water_purifier", "name": "净水器", "type": "tool",
+      "description": "净化脏水", "durability": 30, "weight": 2.0, "value": 50
+    },
+    "rain_collector": {
+      "id": "rain_collector", "name": "雨水收集器", "type": "tool",
+      "description": "收集雨水", "durability": 40, "weight": 3.0, "value": 45
+    },
+    "fishing_net": {
+      "id": "fishing_net", "name": "渔网", "type": "tool",
+      "description": "捕鱼工具", "durability": 35, "weight": 1.5, "value": 30
+    },
+    "trap": {
+      "id": "trap", "name": "捕兽夹", "type": "tool",
+      "description": "捕获小动物", "durability": 20, "weight": 1.0, "value": 25,
+      "stackable": true, "max_stack": 5
+    },
+    "wooden_hoe": {
+      "id": "wooden_hoe", "name": "木锄", "type": "tool",
+      "description": "基础农具", "durability": 20, "weight": 1.5, "value": 15,
+      "efficiency": 1.0
+    },
+    "iron_hoe": {
+      "id": "iron_hoe", "name": "铁锄", "type": "tool",
+      "description": "铁制农具", "durability": 40, "weight": 2.0, "value": 30,
+      "efficiency": 1.5
+    },
+    "watering_can": {
+      "id": "watering_can", "name": "浇水壶", "type": "tool",
+      "description": "浇水工具", "durability": 30, "weight": 1.0, "value": 12
+    },
+    "battery": {
+      "id": "battery", "name": "电池", "type": "electronic",
+      "description": "存储电能", "weight": 0.2, "value": 10,
+      "stackable": true, "max_stack": 20
+    },
+    "solar_panel": {
+      "id": "solar_panel", "name": "太阳能板", "type": "special",
+      "description": "发电设备", "weight": 5.0, "value": 100
+    },
+    "map_fragment": {
+      "id": "map_fragment", "name": "地图碎片", "type": "special",
+      "description": "世界地图的一部分", "weight": 0.1, "value": 5,
+      "stackable": true, "max_stack": 10
+    },
+    "research_data": {
+      "id": "research_data", "name": "研究资料", "type": "special",
+      "description": "科学研究的记录", "weight": 0.2, "value": 15,
+      "stackable": true, "max_stack": 5
+    },
+    "ancient_artifact": {
+      "id": "ancient_artifact", "name": "古代文物", "type": "special",
+      "description": "神秘的古代物品", "weight": 1.0, "value": 100
+    },
+    "rare_herbs": {
+      "id": "rare_herbs", "name": "稀有草药", "type": "special",
+      "description": "具有特殊药效的植物", "health_restore": 30, "mental_restore": 20,
+      "weight": 0.1, "value": 25, "stackable": true, "max_stack": 8
+    },
+    "rare_minerals": {
+      "id": "rare_minerals", "name": "稀有矿物", "type": "special",
+      "description": "稀有的矿物晶体", "weight": 0.5, "value": 50,
+      "stackable": true, "max_stack": 5
+    }
+  },
+  "recipes": {
+    "make_knife": {
+      "id": "make_knife", "name": "制作小刀", "category": "tools", "difficulty": 1,
+      "materials": {"metal": 2, "wood": 1}, "products": {"knife": 1},
+      "exp": 15, "description": "制作一把基础小刀"
+    },
+    "make_baseball_bat": {
+      "id": "make_baseball_bat", "name": "制作棒球棍", "category": "tools", "difficulty": 1,
+      "materials": {"wood": 3}, "products": {"baseball_bat": 1},
+      "exp": 10, "description": "制作一根棒球棍"
+    },
+    "make_cloth_armor": {
+      "id": "make_cloth_armor", "name": "制作布甲", "category": "armor", "difficulty": 1,
+      "materials": {"cloth": 5}, "products": {"cloth_armor": 1},
+      "exp": 20, "description": "制作基础布甲"
+    },
+    "make_leather_armor": {
+      "id": "make_leather_armor", "name": "制作皮甲", "category": "armor", "difficulty": 2,
+      "materials": {"cloth": 3, "leather": 4}, "products": {"leather_armor": 1},
+      "exp": 30, "description": "制作皮革护甲"
+    },
+    "make_bandage": {
+      "id": "make_bandage", "name": "制作绷带", "category": "medical", "difficulty": 1,
+      "materials": {"cloth": 2}, "products": {"bandage": 2},
+      "exp": 10, "description": "制作医疗绷带"
+    },
+    "make_medicine": {
+      "id": "make_medicine", "name": "制作药品", "category": "medical", "difficulty": 2,
+      "materials": {"rare_herbs": 1, "materials": 3}, "products": {"medicine": 2},
+      "exp": 25, "description": "制作基础药品"
+    },
+    "cook_food": {
+      "id": "cook_food", "name": "烹饪食物", "category": "food", "difficulty": 1,
+      "materials": {"food": 2}, "products": {"fresh_food": 1},
+      "exp": 8, "description": "烹饪新鲜食物"
+    },
+    "purify_water": {
+      "id": "purify_water", "name": "净化水", "category": "food", "difficulty": 1,
+      "materials": {"water": 3}, "products": {"clean_water": 2},
+      "exp": 5, "description": "净化饮用水"
+    },
+    "purify_water_advanced": {
+      "id": "purify_water_advanced", "name": "高效净水", "category": "food", "difficulty": 2,
+      "materials": {"water": 5, "charcoal": 2, "cloth": 1}, "products": {"clean_water": 8},
+      "exp": 15, "description": "大量净水"
+    },
+    "build_shelter": {
+      "id": "build_shelter", "name": "建造庇护所", "category": "construction", "difficulty": 3,
+      "materials": {"wood": 10, "cloth": 5, "materials": 8}, "products": {"shelter": 1},
+      "exp": 50, "description": "建造一个简易庇护所"
+    },
+    "repair_tools": {
+      "id": "repair_tools", "name": "修理工具", "category": "tools", "difficulty": 2,
+      "materials": {"metal": 2, "materials": 3}, "products": {"tool_kit": 1},
+      "exp": 20, "description": "修理和维护工具"
+    },
+    "advanced_weapon": {
+      "id": "advanced_weapon", "name": "制作高级武器", "category": "weapons", "difficulty": 4,
+      "materials": {"advanced_alloy": 3, "electronic": 2, "metal": 5}, "products": {"advanced_weapon": 1},
+      "exp": 80, "description": "制作高性能武器"
+    },
+    "energy_pack": {
+      "id": "energy_pack", "name": "制作能量包", "category": "special", "difficulty": 3,
+      "materials": {"electronic": 3, "rare_minerals": 1, "materials": 5}, "products": {"energy_pack": 1},
+      "exp": 40, "description": "制作高能量设备"
+    },
+    "make_bow": {
+      "id": "make_bow", "name": "制作弓", "category": "weapons", "difficulty": 2,
+      "materials": {"wood": 5, "rope": 2}, "products": {"bow": 1},
+      "exp": 25, "description": "制作一把弓"
+    },
+    "make_arrow": {
+      "id": "make_arrow", "name": "制作箭矢", "category": "weapons", "difficulty": 1,
+      "materials": {"wood": 1, "metal": 1}, "products": {"arrow": 5},
+      "exp": 5, "description": "制作5支箭"
+    },
+    "make_fishing_rod": {
+      "id": "make_fishing_rod", "name": "制作鱼竿", "category": "tools", "difficulty": 1,
+      "materials": {"wood": 3, "rope": 1}, "products": {"fishing_rod": 1},
+      "exp": 15, "description": "制作鱼竿"
+    },
+    "make_trap": {
+      "id": "make_trap", "name": "制作捕兽夹", "category": "tools", "difficulty": 2,
+      "materials": {"metal": 3, "wood": 2}, "products": {"trap": 1},
+      "exp": 20, "description": "制作捕兽夹"
+    },
+    "make_antiseptic": {
+      "id": "make_antiseptic", "name": "制作消毒剂", "category": "medical", "difficulty": 2,
+      "materials": {"rare_herbs": 2, "water": 1}, "products": {"antiseptic": 2},
+      "exp": 20, "description": "制作消毒剂"
+    },
+    "make_painkiller": {
+      "id": "make_painkiller", "name": "制作止痛药", "category": "medical", "difficulty": 2,
+      "materials": {"medicine": 2, "herbal_tea": 1}, "products": {"painkiller": 2},
+      "exp": 18, "description": "制作止痛药"
+    }
+  }
+}
