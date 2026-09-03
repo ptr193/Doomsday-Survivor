@@ -33,23 +33,22 @@ class GameWorld:
         for loc_id, loc_info in locations_data.items():
             terrain_id = loc_info['terrain']
             terrain_cfg = self.game.terrain_gen.terrain_types.get(terrain_id)
+            display_name = loc_info.get('name')
             if terrain_cfg:
-                name = f"{terrain_cfg.name}区域_{loc_id.split('_')[-2]}_{loc_id.split('_')[-1]}"
-                description = terrain_cfg.description
-                safety = terrain_cfg.safety_base
-                # 根据地形生成资源（随机）
+                name = display_name or f"{terrain_cfg.name}区域_{loc_id.split('_')[-2]}_{loc_id.split('_')[-1]}"
+                description = loc_info.get('description') or terrain_cfg.description
+                safety = loc_info.get('safety', terrain_cfg.safety_base)
                 resources = {}
                 for res_type, prob in terrain_cfg.resource_distribution.items():
                     if random.random() < prob:
                         resources[res_type] = random.randint(1, 3)
-                # 添加天气修正
                 weather_mod = self.game.weather_effects.get("resource_mod", 1.0)
                 for res in resources:
                     resources[res] = max(1, int(resources[res] * weather_mod))
             else:
-                name = loc_id
-                description = ""
-                safety = 5
+                name = display_name or loc_id
+                description = loc_info.get('description', "")
+                safety = loc_info.get('safety', 5)
                 resources = {}
             self.locations[loc_id] = Location(
                 id=loc_id,
@@ -58,15 +57,18 @@ class GameWorld:
                 terrain=terrain_id,
                 safety_level=safety,
                 resources=resources,
-                connected_locations=loc_info['connected'],
-                special_events=[],
-                x=loc_info['x'],
-                y=loc_info['y'],
-                discovered=(loc_id == "loc_0_0")
+                connected_locations=loc_info.get('connected', []),
+                special_events=loc_info.get('special_events', []),
+                x=loc_info.get('x', 0),
+                y=loc_info.get('y', 0),
+                discovered=bool(loc_info.get('discovered', loc_id == "starting_area"))
             )
-        self.current_location_id = "loc_0_0"
-        self.locations[self.current_location_id].discovered = True
-        self.locations[self.current_location_id].explored = True
+        start_id = "starting_area" if "starting_area" in self.locations else next(iter(self.locations), None)
+        self.current_location_id = start_id
+        if start_id:
+            self.locations[start_id].discovered = True
+            self.locations[start_id].explored = True
+        self.initialized = True
         logging.info(f"生成世界地图，共{len(self.locations)}个地点")
 
     def initialize(self):
@@ -214,12 +216,34 @@ class GameWorld:
 
     def load_data(self, save_data):
         try:
-            self.current_location_id = save_data.get('current_location_id', 'starting_area')
             locations_data = save_data.get('locations', {})
-            for loc_id, loc_data in locations_data.items():
-                if loc_id in self.locations:
-                    self.locations[loc_id].discovered = loc_data.get('discovered', False)
-                    self.locations[loc_id].explored = loc_data.get('explored', False)
+            if locations_data and any('terrain' in loc or 'name' in loc for loc in locations_data.values()):
+                self.locations.clear()
+                for loc_id, loc_data in locations_data.items():
+                    self.locations[loc_id] = Location(
+                        id=loc_id,
+                        name=loc_data.get('name', loc_id),
+                        description=loc_data.get('description', ''),
+                        terrain=loc_data.get('terrain', 'plain'),
+                        safety_level=loc_data.get('safety_level', 5),
+                        resources=loc_data.get('resources', {}),
+                        connected_locations=loc_data.get('connected_locations', []),
+                        special_events=loc_data.get('special_events', []),
+                        x=loc_data.get('x', 0),
+                        y=loc_data.get('y', 0),
+                        discovered=loc_data.get('discovered', False),
+                        explored=loc_data.get('explored', False)
+                    )
+            else:
+                if not self.locations:
+                    self.create_locations()
+                for loc_id, loc_data in locations_data.items():
+                    if loc_id in self.locations:
+                        self.locations[loc_id].discovered = loc_data.get('discovered', False)
+                        self.locations[loc_id].explored = loc_data.get('explored', False)
+            self.current_location_id = save_data.get('current_location_id', 'starting_area')
+            if self.current_location_id not in self.locations and self.locations:
+                self.current_location_id = next(iter(self.locations))
             self.initialized = True
             logging.info("世界数据加载完成")
         except Exception as e:
@@ -230,6 +254,15 @@ class GameWorld:
         locations_data = {}
         for loc_id, location in self.locations.items():
             locations_data[loc_id] = {
+                'name': location.name,
+                'description': location.description,
+                'terrain': location.terrain,
+                'safety_level': location.safety_level,
+                'resources': location.resources,
+                'connected_locations': location.connected_locations,
+                'special_events': location.special_events,
+                'x': location.x,
+                'y': location.y,
                 'discovered': location.discovered,
                 'explored': location.explored
             }
@@ -264,14 +297,21 @@ class GameWorld:
             self.game.achievements.check_exploration_achievements()
         self.current_location_id = location_id
         self.game.player.location = location_id
+        if location_id not in self.game.player.discovered_locations:
+            self.game.player.discovered_locations.append(location_id)
+        if hasattr(self.game, 'quests') and self.game.quests:
+            self.game.quests.update_quest_progress('location_discovered', location=target, location_id=target.id)
         logging.info(f"玩家从 {current.id} 移动到 {location_id}")
         return {'success': True, 'message': f"你移动到了{target.name}。", 'new_location': target}
 
     def discover_location(self, location):
         if location.id in self.locations:
             self.locations[location.id].discovered = True
-            self.game.player.discovered_locations.append(location.id)
+            if location.id not in self.game.player.discovered_locations:
+                self.game.player.discovered_locations.append(location.id)
             self.game.player.stats['locations_discovered'] += 1
+            if hasattr(self.game, 'quests') and self.game.quests:
+                self.game.quests.update_quest_progress('location_discovered', location=self.locations[location.id])
 
     def generate_exploration_event(self):
         current = self.get_current_location()
@@ -350,7 +390,7 @@ class GameWorld:
         return {'type': 'enemy', 'enemy_data': enemy, 'message': f"在{location.name}遭遇了{enemy['name']}！"}
 
     def _discovery_event(self, location):
-        undiscovered = [loc for loc_id in location.connected_locations
+        undiscovered = [loc_id for loc_id in location.connected_locations
                         if loc_id in self.locations and not self.locations[loc_id].discovered]
         if undiscovered:
             new_loc = random.choice(undiscovered)

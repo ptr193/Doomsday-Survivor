@@ -91,7 +91,7 @@
   },
   "wandering_merchant": {
     "id": "wandering_merchant", "name": "流浪商人卡尔", "faction": "traders",
-    "location": "random", "type": "merchant",
+    "location": "starting_area", "wandering": true, "type": "merchant",
     "description": "四处旅行的商人，商品种类丰富",
     "dialogue": {
       "greeting": "来看看我的货物吧，都是好东西！",
@@ -145,7 +145,7 @@
   },
   "mysterious_stranger": {
     "id": "mysterious_stranger", "name": "神秘陌生人", "faction": "neutral",
-    "location": "random", "type": "special",
+    "location": "deep_forest", "wandering": true, "type": "special",
     "description": "身份不明的旅行者，似乎知道很多秘密",
     "dialogue": {
       "greeting": "你不该来这里...但既然来了，也许能帮上忙。",

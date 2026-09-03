@@ -88,10 +88,26 @@ class FarmingSystem:
     def load_data(self, save_data):
         """加载农业系统数据"""
         try:
+            if not self.farmlands:
+                self.initialize_farmlands()
             farmlands_data = save_data.get('farmlands', {})
             for loc_id, farmland_data in farmlands_data.items():
+                plots = []
+                for plot in farmland_data.get('plots', []):
+                    plot = dict(plot)
+                    planting_date = plot.get('planting_date')
+                    if isinstance(planting_date, str):
+                        try:
+                            plot['planting_date'] = datetime.fromisoformat(planting_date)
+                        except ValueError:
+                            plot['planting_date'] = None
+                    plots.append(plot)
+                farmland_data = dict(farmland_data)
+                farmland_data['plots'] = plots
                 if loc_id in self.farmlands:
                     self.farmlands[loc_id].update(farmland_data)
+                else:
+                    self.farmlands[loc_id] = farmland_data
             self.initialized = True
             logging.info("农业系统数据加载完成")
         except Exception as e:
@@ -100,7 +116,18 @@ class FarmingSystem:
 
     def get_save_data(self):
         """获取保存数据"""
-        return {'farmlands': self.farmlands}
+        farmlands = {}
+        for loc_id, farmland in self.farmlands.items():
+            plots = []
+            for plot in farmland.get('plots', []):
+                plot_data = dict(plot)
+                planting_date = plot_data.get('planting_date')
+                if isinstance(planting_date, datetime):
+                    plot_data['planting_date'] = planting_date.isoformat()
+                plots.append(plot_data)
+            farmlands[loc_id] = dict(farmland)
+            farmlands[loc_id]['plots'] = plots
+        return {'farmlands': farmlands}
 
     def can_plant(self, location_id):
         """检查是否可以种植"""
@@ -151,6 +178,8 @@ class FarmingSystem:
         plot['weeds'] = 0
 
         self.game.player.gain_skill_exp('farming', 5)
+        if hasattr(self.game, 'quests') and self.game.quests:
+            self.game.quests.update_quest_progress('crop_planted', crop_type=crop_type)
         logging.info(f"在{location_id}种植了{crop_data['name']}")
         return {'success': True, 'message': f"成功种植了{crop_data['name']}！", 'plot_id': plot['id']}
 
@@ -295,13 +324,21 @@ class FarmingSystem:
         self.game.player.add_item(harvest_product, final_yield)
 
         special_products = crop_data.get('special_products', {})
-        for product, (min_q, max_q) in special_products.items():
+        for product, amount in special_products.items():
+            if isinstance(amount, dict):
+                min_q = int(amount.get('min', 1))
+                max_q = int(amount.get('max', min_q))
+            else:
+                min_q, max_q = amount
+                min_q, max_q = int(min_q), int(max_q)
             if random.random() < 0.7:
-                qty = random.randint(min_q, max_q)
+                qty = random.randint(min_q, max(min_q, max_q))
                 self.game.player.add_item(product, qty)
 
         self.game.player.gain_skill_exp('farming', crop_data['exp_reward'])
         self.game.player.stats['crops_harvested'] += 1
+        if hasattr(self.game, 'quests') and self.game.quests:
+            self.game.quests.update_quest_progress('crop_harvested', quantity=final_yield)
 
         if crop_data.get('perennial', False):
             plot['growth_stage'] = 0
@@ -331,6 +368,8 @@ class FarmingSystem:
         removed = min(plot['weeds'], 50)
         plot['weeds'] = max(0, plot['weeds'] - removed)
         self.game.player.gain_skill_exp('farming', 3)
+        if hasattr(self.game, 'quests') and self.game.quests:
+            self.game.quests.update_quest_progress('farm_action_completed', action='remove_weeds')
         return {'success': True, 'message': f'清除了{removed}%的杂草'}
 
     def remove_pests(self, location_id, plot_id):

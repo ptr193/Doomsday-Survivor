@@ -2,6 +2,7 @@
 
 import random
 import logging
+from datetime import datetime
 
 class QuestSystem:
     def __init__(self, game):
@@ -22,14 +23,22 @@ class QuestSystem:
             raise
 
     def create_quests(self):
-        # 主线任务（精简示例，实际内容从原项目复制）
+        quests_data = self.game.mod_manager.get_data('quests', None) or {}
+        if quests_data:
+            self.quests = {}
+            for qid, quest in quests_data.items():
+                q = dict(quest)
+                q['id'] = q.get('id', qid)
+                q['objectives'] = [dict(obj) for obj in q.get('objectives', [])]
+                for obj in q['objectives']:
+                    obj['current'] = obj.get('current', 0)
+                q['prerequisites'] = list(q.get('prerequisites', []))
+                q['repeatable'] = bool(q.get('repeatable', False))
+                self.quests[qid] = q
+            logging.info(f"从JSON加载了{len(self.quests)}个任务")
+            return
         self.quests['main_01'] = {'id': 'main_01', 'name': '初来乍到', 'category': 'main', 'difficulty': 1, 'description': '在这个陌生的世界中生存下来，学习基本的生存技能。', 'objectives': [{'id': 'explore_start', 'description': '探索起始区域', 'type': 'explore_location', 'target': 'starting_area', 'required': 1, 'current': 0}, {'id': 'collect', 'description': '收集5个基础物资', 'type': 'collect_items', 'target': 'materials', 'required': 5, 'current': 0}, {'id': 'craft', 'description': '制作第一个物品', 'type': 'craft_item', 'target': 'any', 'required': 1, 'current': 0}], 'prerequisites': [], 'rewards': {'exp': 100, 'items': {'food': 5, 'water': 5, 'materials': 10}, 'money': 50, 'unlocks': ['main_02']}, 'time_limit': None, 'repeatable': False, 'giver_npc': 'system', 'story_text': '在这个破碎的世界中，每一个幸存者都要从零开始。'}
-        # 其他任务省略，请从原项目完整复制所有任务定义（或使用MOD加载）
-        # 为节省篇幅，此处仅做占位，实际使用时应包含原项目的所有任务
-        # 建议从原项目的 quests.py 中完整复制 create_quests 方法的内容
-        # 但为了保证功能，这里只添加必要的任务示例
         self.quests['side_01'] = {'id': 'side_01', 'name': '老农的请求', 'category': 'side', 'difficulty': 2, 'description': '帮助老农民恢复他的农田。', 'objectives': [{'id': 'clear_weeds', 'description': '清除农田里的杂草', 'type': 'farm_action', 'target': 'remove_weeds', 'required': 3, 'current': 0}, {'id': 'plant_crops', 'description': '种植2种不同的作物', 'type': 'plant_crops', 'target': 'any', 'required': 2, 'current': 0}, {'id': 'harvest_crops', 'description': '收获5个农作物', 'type': 'harvest_crops', 'target': 'any', 'required': 5, 'current': 0}], 'prerequisites': [], 'rewards': {'exp': 150, 'items': {'vegetable_seeds': 5, 'fresh_food': 3}, 'money': 80, 'reputation': {'survivors': 10}}, 'time_limit': 7, 'repeatable': False, 'giver_npc': 'old_farmer'}
-        # 确保有日常任务示例
         self.quests['daily_01'] = {'id': 'daily_01', 'name': '日常收集', 'category': 'daily', 'difficulty': 1, 'description': '收集一些基础生存物资。', 'objectives': [{'id': 'collect', 'description': '收集10个材料', 'type': 'collect_items', 'target': 'materials', 'required': 10, 'current': 0}], 'prerequisites': [], 'rewards': {'exp': 50, 'items': {'food': 2, 'water': 2}, 'money': 30}, 'time_limit': 1, 'repeatable': True, 'giver_npc': 'system'}
         logging.info(f"创建了{len(self.quests)}个任务")
 
@@ -44,6 +53,8 @@ class QuestSystem:
                     for i, obj in enumerate(qdata.get('objectives', [])):
                         if i < len(self.quests[qid]['objectives']):
                             self.quests[qid]['objectives'][i]['current'] = obj.get('current', 0)
+                    if qdata.get('start_time'):
+                        self.quests[qid]['start_time'] = qdata['start_time']
             self.initialized = True
             logging.info("任务系统数据加载完成")
         except Exception as e:
@@ -53,7 +64,13 @@ class QuestSystem:
     def get_save_data(self):
         progress = {}
         for qid, quest in self.quests.items():
-            progress[qid] = {'objectives': [{'current': obj['current']} for obj in quest['objectives']]}
+            start_time = quest.get('start_time')
+            if hasattr(start_time, 'isoformat'):
+                start_time = start_time.isoformat()
+            progress[qid] = {
+                'objectives': [{'current': obj['current']} for obj in quest['objectives']],
+                'start_time': start_time
+            }
         return {'active_quests': self.active_quests, 'completed_quests': self.completed_quests, 'failed_quests': self.failed_quests, 'quests_progress': progress}
 
     def start_quest(self, quest_id):
@@ -68,7 +85,7 @@ class QuestSystem:
         if quest_id in self.completed_quests and not quest['repeatable']:
             return {'success': False, 'message': '任务已完成且不可重复'}
         self.active_quests.append(quest_id)
-        quest['start_time'] = self.game.game_time
+        quest['start_time'] = self.game.game_time.isoformat() if self.game.game_time else None
         logging.info(f"开始任务: {quest['name']}")
         self.game.add_game_log(f"新任务: {quest['name']}")
         return {'success': True, 'message': f"开始任务: {quest['name']}"}
@@ -99,7 +116,10 @@ class QuestSystem:
         if t == 'explore_location' and event_type == 'location_discovered':
             target = objective['target']
             loc = data.get('location')
-            if target == 'any' or loc == target or (target == 'dangerous' and loc and loc.safety_level <= 3):
+            loc_id = data.get('location_id')
+            if loc_id is None and loc is not None:
+                loc_id = loc if isinstance(loc, str) else getattr(loc, 'id', None)
+            if target == 'any' or loc_id == target or loc == target or (target == 'dangerous' and loc and getattr(loc, 'safety_level', 99) <= 3):
                 objective['current'] += 1
                 updated = True
         elif t == 'collect_items' and event_type == 'item_collected':
@@ -206,6 +226,9 @@ class QuestSystem:
         if 'reputation' in rewards:
             for faction, amount in rewards['reputation'].items():
                 self.game.npcs.change_relationship(faction, amount)
+        if 'money' in rewards:
+            self.game.player.add_money(rewards['money'])
+            self.game.add_game_log(f"获得金钱: {rewards['money']}")
 
     def _unlock_new_quests(self, quest):
         unlocks = quest['rewards'].get('unlocks', [])
@@ -265,8 +288,14 @@ class QuestSystem:
     def check_timed_quests(self):
         for qid in list(self.active_quests):
             quest = self.quests[qid]
-            if quest.get('time_limit') and 'start_time' in quest:
-                time_passed = (self.game.game_time - quest['start_time']).days
+            if quest.get('time_limit') and quest.get('start_time'):
+                start_time = quest['start_time']
+                if isinstance(start_time, str):
+                    try:
+                        start_time = datetime.fromisoformat(start_time)
+                    except ValueError:
+                        continue
+                time_passed = (self.game.game_time - start_time).days
                 if time_passed >= quest['time_limit']:
                     self.fail_quest(qid)
 

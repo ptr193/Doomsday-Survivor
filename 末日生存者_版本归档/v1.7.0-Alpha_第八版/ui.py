@@ -177,6 +177,17 @@ class GameUI:
              "health": 80, "max_health": 80, "stamina": 80, "max_stamina": 80,
              "strength": 5, "agility": 7, "intelligence": 6, "luck": 10}
         ]
+        name_frame = ttk.Frame(scrollable)
+        name_frame.pack(fill="x", padx=50, pady=10)
+        ttk.Label(name_frame, text="角色姓名:", style="Normal.TLabel").pack(side="left")
+        name_var = tk.StringVar(value="幸存者")
+        name_entry = ttk.Entry(name_frame, textvariable=name_var, width=24)
+        name_entry.pack(side="left", padx=8)
+        def start_with_character(char, slot):
+            data = dict(char)
+            custom_name = name_var.get().strip()
+            data["name"] = custom_name or char["name"]
+            self.game.start_new_game(slot, data)
         for char in characters:
             char_frame = ttk.Frame(scrollable, relief="solid", padding=15)
             char_frame.pack(fill="x", padx=50, pady=10)
@@ -188,7 +199,7 @@ class GameUI:
                           f"力量: {char['strength']} | 敏捷: {char['agility']} | 智力: {char['intelligence']} | 幸运: {char['luck']}")
             stats_label = ttk.Label(char_frame, text=stats_text, style="Status.TLabel")
             stats_label.pack(anchor="w")
-            select_button = ttk.Button(char_frame, text="选择角色", command=lambda c=char, s=save_slot: self.game.start_new_game(s, c), style="Action.TButton")
+            select_button = ttk.Button(char_frame, text="选择角色", command=lambda c=char, s=save_slot: start_with_character(c, s), style="Action.TButton")
             select_button.pack(anchor="e", pady=5)
     
     # ---------- 游戏主界面 ----------
@@ -236,14 +247,25 @@ class GameUI:
     def update_surroundings(self):
         for widget in self.surroundings_frame.winfo_children():
             widget.destroy()
-        # 获取当前位置的NPC
+        loc = self.game.world.get_current_location()
+        if loc:
+            ttk.Label(self.surroundings_frame, text=f"地点: {loc.name}", style="Status.TLabel").pack(anchor="w")
+            if loc.resources:
+                res_text = ", ".join([f"{self.game.items.get_item_name(k)}x{v}" for k, v in loc.resources.items()])
+                ttk.Label(self.surroundings_frame, text=f"资源: {res_text}", style="Status.TLabel").pack(anchor="w")
         npcs = self.game.npcs.get_npcs_at_location(self.game.player.location)
         for npc in npcs:
             btn = ttk.Button(self.surroundings_frame, text=f"NPC: {npc['name']}",
                              command=lambda n=npc: self.select_surrounding(n))
             btn.pack(fill="x", pady=1)
-        # 可拾取物品（简化：显示背包中未有的资源点，但这里仅作示例）
-        # 实际可以从世界地点中获取可交互对象
+        if self.game.farming.can_plant(self.game.player.location):
+            ttk.Button(self.surroundings_frame, text="农田",
+                       command=self.show_farming).pack(fill="x", pady=1)
+        connected = self.game.world.get_connected_locations() if loc else []
+        for dest in connected:
+            if dest.discovered:
+                ttk.Button(self.surroundings_frame, text=f"前往: {dest.name}",
+                           command=lambda lid=dest.id: self.game.perform_action("move", location_id=lid)).pack(fill="x", pady=1)
     
     def select_surrounding(self, obj):
         self.selected_surrounding = obj
@@ -276,9 +298,12 @@ class GameUI:
         # 检查是否有选中事物或物品
         if hasattr(self, 'selected_surrounding') and self.selected_surrounding:
             obj = self.selected_surrounding
+            ttk.Button(self.action_scrollable, text="对话", command=lambda: self.do_surrounding_action(obj, "对话")).pack(fill="x", pady=2)
+            ttk.Button(self.action_scrollable, text="取消选择", command=self.clear_surrounding_selection).pack(fill="x", pady=2)
             if 'services' in obj:
                 for service in obj['services']:
-                    btn = ttk.Button(self.action_scrollable, text=service, command=lambda s=service: self.do_surrounding_action(obj, s))
+                    label = self.get_service_label(service)
+                    btn = ttk.Button(self.action_scrollable, text=label, command=lambda s=service: self.do_surrounding_action(obj, s))
                     btn.pack(fill="x", pady=2)
         elif hasattr(self, 'selected_item') and self.selected_item:
             item_id = self.selected_item
@@ -304,22 +329,139 @@ class GameUI:
                 ("冥想", lambda: self.game.perform_action("meditate")),
                 ("背包", self.show_inventory),
                 ("地图", self.show_map),
-                ("任务", self.show_quests)
+                ("任务", self.show_quests),
+                ("农业", self.show_farming),
+                ("交易", self.show_trade_dialog)
             ]
             for text, cmd in actions:
                 btn = ttk.Button(self.action_scrollable, text=text, command=cmd, style="Action.TButton")
                 btn.pack(fill="x", pady=2)
     
+    def get_service_label(self, service):
+        labels = {
+            "quests": "任务", "trade": "交易", "healing": "治疗", "farming_tips": "农耕建议",
+            "medical_supplies": "医疗物资", "security_tips": "防卫建议", "weapon_training": "武器训练",
+            "crafting": "制作", "repair": "修理", "map_info": "地图情报", "location_tips": "地点提示",
+            "information": "打听消息", "weapon_info": "武器情报", "research": "研究",
+            "tech_items": "科技物品", "radiation_treatment": "辐射治疗", "special_quests": "特殊任务",
+            "training": "训练", "survival_tips": "生存技巧", "meditation": "冥想指导"
+        }
+        return labels.get(service, service)
+
+    def clear_surrounding_selection(self):
+        self.selected_surrounding = None
+        self.selected_item = None
+        self.update_action_buttons()
+
     def do_surrounding_action(self, obj, service):
-        if service == "对话":
-            self.show_dialogue_window(obj, obj['dialogue']['greeting'])
-        elif service == "交易":
-            self.show_trade_dialog()
-        elif service == "任务":
-            # 显示任务窗口
-            self.show_quests()
+        npc_id = obj.get('id')
+        if service in ("对话", "dialogue"):
+            greeting = obj.get('dialogue', {}).get('greeting', "......")
+            self.show_dialogue_window(obj, greeting)
+            self.game.npcs.record_interaction(npc_id)
+            self.game.quests.update_quest_progress('npc_talked', npc_id=npc_id)
+            self.game.quests.update_quest_progress('npc_met', npc_id=npc_id)
+        elif service in ("交易", "trade", "medical_supplies", "tech_items"):
+            self.show_npc_trade(obj)
+        elif service in ("任务", "quests", "special_quests"):
+            self.offer_npc_quests(obj)
+        elif service in ("healing", "radiation_treatment"):
+            self.handle_npc_healing(obj, service)
+        elif service in ("farming_tips", "security_tips", "weapon_training", "map_info",
+                         "location_tips", "information", "weapon_info", "survival_tips", "training"):
+            self.show_npc_tip(obj, service)
+        elif service in ("crafting",):
+            self.show_crafting()
+        elif service in ("repair",):
+            self.show_repair_dialog()
+        elif service in ("research",):
+            self.game.perform_action("research")
+        elif service in ("meditation",):
+            self.game.perform_action("meditate")
         else:
-            self.game.add_game_log(f"与{obj['name']}进行{service}...")
+            self.game.add_game_log(f"与{obj['name']}进行{self.get_service_label(service)}...")
+        self.game.npcs.record_interaction(npc_id)
+
+    def show_npc_trade(self, npc):
+        shop_id = npc.get('shop')
+        if not shop_id:
+            messagebox.showinfo("提示", f"{npc['name']} 没有商店")
+            return
+        shop = self.game.npcs.get_shop_inventory(shop_id)
+        if not shop:
+            messagebox.showinfo("提示", f"{npc['name']} 的商店暂时无法营业")
+            return
+        win = tk.Toplevel(self.root)
+        win.title(f"与 {npc['name']} 交易")
+        win.geometry("600x400")
+        notebook = ttk.Notebook(win)
+        notebook.pack(fill="both", expand=True, padx=10, pady=10)
+        buy_frame = ttk.Frame(notebook)
+        notebook.add(buy_frame, text="购买")
+        sell_frame = ttk.Frame(notebook)
+        notebook.add(sell_frame, text="出售")
+        self.create_buy_tab(buy_frame, shop, shop_id)
+        self.create_sell_tab(sell_frame, shop, shop_id)
+        ttk.Label(win, text=f"金钱: {self.game.player.money}").pack()
+        ttk.Button(win, text="关闭", command=win.destroy).pack(pady=10)
+
+    def offer_npc_quests(self, npc):
+        quest_ids = npc.get('quests', [])
+        available = []
+        for qid in quest_ids:
+            quest = self.game.quests.quests.get(qid)
+            if not quest:
+                continue
+            if qid in self.game.quests.active_quests:
+                continue
+            if qid in self.game.quests.completed_quests and not quest.get('repeatable'):
+                continue
+            available.append(quest)
+        if not available:
+            self.show_quests()
+            return
+        win = tk.Toplevel(self.root)
+        win.title(f"{npc['name']} 的任务")
+        win.geometry("500x360")
+        for quest in available:
+            frame = ttk.Frame(win, relief="solid", padding=8)
+            frame.pack(fill="x", padx=10, pady=5)
+            ttk.Label(frame, text=quest['name'], style="Subtitle.TLabel").pack(anchor="w")
+            ttk.Label(frame, text=quest.get('description', ''), wraplength=440).pack(anchor="w")
+            ttk.Button(frame, text="接受", command=lambda qid=quest['id']: self.accept_npc_quest(qid, win)).pack(anchor="e")
+        ttk.Button(win, text="关闭", command=win.destroy).pack(pady=8)
+
+    def accept_npc_quest(self, quest_id, win):
+        result = self.game.quests.start_quest(quest_id)
+        messagebox.showinfo("任务", result.get('message', ''))
+        win.destroy()
+
+    def handle_npc_healing(self, npc, service):
+        cost = 20 if service == "healing" else 35
+        if not self.game.player.spend_money(cost):
+            messagebox.showwarning("治疗", f"金钱不足，需要{cost}")
+            return
+        if service == "healing":
+            self.game.player.modify_health(40)
+            self.game.add_game_log(f"{npc['name']}为你进行了治疗，花费{cost}。")
+        else:
+            self.game.player.radiation = max(0, self.game.player.radiation - 25)
+            self.game.radiation_level = max(0, self.game.radiation_level - 10)
+            self.game.add_game_log(f"{npc['name']}帮你降低了辐射，花费{cost}。")
+
+    def show_npc_tip(self, npc, service):
+        topics = npc.get('dialogue', {}).get('topics', {})
+        topic_map = {
+            "farming_tips": "farming", "security_tips": "security", "weapon_training": "weapons",
+            "map_info": "maps", "location_tips": "locations", "information": "rumors",
+            "weapon_info": "weapons", "survival_tips": "survival", "training": "survival"
+        }
+        topic = topic_map.get(service)
+        text = topics.get(topic) if topic else None
+        if not text:
+            text = topics.get(next(iter(topics), ''), npc.get('dialogue', {}).get('greeting', '......'))
+        self.show_dialogue_window(npc, text)
+        self.game.player.gain_skill_exp('social', 3)
     
     def create_status_summary(self, parent):
         frame = ttk.Frame(parent)
@@ -386,7 +528,7 @@ class GameUI:
                        f"辐射: {self.game.radiation_level}% | 第{self.game.day_count}天 {self.game.format_time()} | "
                        f"{self.game.get_weather_name()} | {self.game.get_season_name()}")
         self.status_label.config(text=status_text)
-        self.status_summary_label.config(text=f"❤️{p.health}/{p.max_health}  ⚡{p.stamina}/{p.max_stamina}  🧠{p.mental}/{p.max_mental}")
+        self.status_summary_label.config(text=f"生命{p.health}/{p.max_health}  体力{p.stamina}/{p.max_stamina}  精神{p.mental}/{p.max_mental}  金钱{p.money}")
         self.update_quest_display()
         self.update_quick_items()
         self.update_surroundings()
@@ -665,7 +807,7 @@ class GameUI:
             for conn_id in loc.connected_locations:
                 if conn_id in locations and locations[conn_id].discovered:
                     conn = locations[conn_id]
-                    canvas.create_line(loc.x, conn.x, loc.y, conn.y, fill="#888", width=2, tags="line")
+                    canvas.create_line(loc.x, loc.y, conn.x, conn.y, fill="#888", width=2, tags="line")
         for loc in discovered:
             terrain_color = {
                 "forest": "#2d6a4f", "plain": "#a7c5a3", "mountain": "#8d6b63", "river": "#4ea8de",
@@ -796,14 +938,21 @@ class GameUI:
         ttk.Button(parent, text="种植选中作物", command=plant_selected).pack(pady=5)
     
     def create_management_tab(self, parent, status):
-        text = scrolledtext.ScrolledText(parent, wrap=tk.WORD, font=("Arial", 9))
-        text.pack(fill="both", expand=True, padx=10, pady=10)
+        ttk.Button(parent, text="全部浇水", command=lambda: self.game.perform_action("water_crops")).pack(pady=4)
         for plot in status.get('plots_details', []):
+            frame = ttk.Frame(parent, relief="solid", padding=6)
+            frame.pack(fill="x", padx=8, pady=4)
             if plot.get('crop_type'):
-                text.insert(tk.END, f"地块 {plot['id']}: {plot.get('crop_name', '未知')}\n")
-                text.insert(tk.END, f"  生长阶段: {plot.get('growth_description', '未知')}\n")
-                text.insert(tk.END, f"  健康: {plot.get('health', 0)}% | 水分: {plot.get('water_level', 0)}% | 害虫: {plot.get('pest_infestation', 0)}% | 杂草: {plot.get('weeds', 0)}%\n\n")
-        text.config(state="disabled")
+                ttk.Label(frame, text=f"地块 {plot['id']}: {plot.get('crop_name', '未知')} | {plot.get('growth_description', '未知')}").pack(anchor="w")
+                ttk.Label(frame, text=f"健康: {int(plot.get('health', 0))}% | 水分: {int(plot.get('water_level', 0))}% | 害虫: {int(plot.get('pest_infestation', 0))}% | 杂草: {int(plot.get('weeds', 0))}%").pack(anchor="w")
+                btn_frame = ttk.Frame(frame)
+                btn_frame.pack(anchor="e")
+                ttk.Button(btn_frame, text="浇水", command=lambda pid=plot['id']: self.game.perform_action("water_crops", plot_id=pid)).pack(side="left", padx=2)
+                ttk.Button(btn_frame, text="除草", command=lambda pid=plot['id']: self.game.perform_action("remove_weeds", plot_id=pid)).pack(side="left", padx=2)
+                if plot.get('is_mature'):
+                    ttk.Button(btn_frame, text="收获", command=lambda pid=plot['id']: self.game.perform_action("harvest", plot_id=pid)).pack(side="left", padx=2)
+            else:
+                ttk.Label(frame, text=f"地块 {plot['id']}: 空闲").pack(anchor="w")
     
     def show_quests(self):
         win = tk.Toplevel(self.root)
@@ -1009,7 +1158,7 @@ class GameUI:
     
     def show_trade_dialog(self):
         npcs = self.game.npcs.get_npcs_at_location(self.game.player.location)
-        merchants = [n for n in npcs if 'trade' in n.get('services', [])]
+        merchants = [n for n in npcs if n.get('shop') or 'trade' in n.get('services', []) or 'medical_supplies' in n.get('services', [])]
         if not merchants:
             messagebox.showinfo("提示", "当前位置没有可交易的商人")
             return
@@ -1162,7 +1311,7 @@ class GameUI:
     def show_story_book(self):
         """显示故事列表，点击标题后显示具体内容"""
         stories = self.game.story_reader.get_unlocked_stories()
-        print(f"故事书: 找到 {len(stories)} 个故事")
+        logging.info(f"故事书: 找到 {len(stories)} 个故事")
         if not stories:
         	messagebox.showinfo("提示", "暂无解锁的故事")
         	return

@@ -35,19 +35,8 @@ class StoryReader:
         return self.stories.get(story_id)
 
     def get_unlocked_stories(self):
-        logging.info(f"=== DEBUG === unlocked_stories: {self.unlocked_stories}")
-        logging.info(f"=== DEBUG === stories keys: {list(self.stories.keys())}")
-        
-        
-        all_stories = self.game.mod_manager.get_data('stories', None) or {}
-        
-        logging.info(f"DEBUG: story_reader stories count after reload: {len(self.stories)}")
-        
-        return [all_stories[sid] for sid in self.unlocked_stories if sid in all_stories]
-        
-        
-        logging.info(f"=== DEBUG === result count: {len(result)}")
-        return result
+        self.reload_stories()
+        return [self.stories[sid] for sid in self.unlocked_stories if sid in self.stories]
 
     def get_all_stories(self):
         return list(self.stories.values())

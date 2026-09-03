@@ -8,9 +8,10 @@ class ModManager:
     """MOD管理器，负责加载和管理所有外部数据"""
     def __init__(self, game):
         self.game = game
-        self.base_path = "data"
-        self.system_mods_path = "mods/system"
-        self.global_mods_path = "mods/global"
+        root_dir = os.path.dirname(os.path.abspath(__file__))
+        self.base_path = os.path.join(root_dir, "data")
+        self.system_mods_path = os.path.join(root_dir, "mods", "system")
+        self.global_mods_path = os.path.join(root_dir, "mods", "global")
         self.active_global_mods = set()
         self.enabled_global_mods = {}  # mod_id -> bool
         self.loaded_data = {
@@ -60,6 +61,16 @@ class ModManager:
         try:
             with open(path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
+            if not isinstance(data, dict):
+                logging.warning(f"系统资源格式无效: {path}")
+                return
+            if category == 'items' and 'items' in data and isinstance(data.get('items'), dict):
+                self.loaded_data['items'].update(data['items'])
+                nested_recipes = data.get('recipes', {})
+                if isinstance(nested_recipes, dict):
+                    self.loaded_data['recipes'].update(nested_recipes)
+                logging.info(f"加载系统资源 items: {len(data['items'])} 项")
+                return
             self.loaded_data[category].update(data)
             logging.info(f"加载系统资源 {category}: {len(data)} 项")
         except Exception as e:

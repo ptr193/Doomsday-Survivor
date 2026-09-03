@@ -116,10 +116,8 @@ class CombatSystem:
             player_label.config(text=f"玩家: {player.health}/{player.max_health}")
             if enemy['health'] <= 0:
                 win.destroy()
-                # 战斗胜利，结算奖励
-                exp = enemy['exp_reward']
-                loot = self.generate_loot(enemy)
-                self.reward_player(player, enemy, exp, loot)
+                exp = enemy.get('exp_reward', 0)
+                self.reward_player(player, enemy, exp, {})
                 self.game.add_game_log(f"卡牌战斗胜利！击败了{enemy['name']}")
             elif player.health <= 0:
                 win.destroy()
@@ -167,10 +165,13 @@ class CombatSystem:
             btn.pack(side="left", padx=5)
 
         win.wait_window()
-        # 返回战斗结果
+        loot = {}
+        if player.health > 0 and enemy['health'] <= 0:
+            loot = self.generate_loot(enemy)
         return {
-            'player_won': player.health > 0,
+            'player_won': player.health > 0 and enemy['health'] <= 0,
             'enemy_name': enemy['name'],
+            'loot': loot,
             'rounds': 0,
             'combat_log': self.combat_log.copy()
         }
@@ -397,18 +398,25 @@ class CombatSystem:
 
     def generate_loot(self, enemy):
         loot = {}
-        if random.randint(1, 100) <= enemy['loot_chance']:
-            for item_id, (min_q, max_q, chance) in enemy.get('loot_table', {}).items():
+        if random.randint(1, 100) <= enemy.get('loot_chance', 0):
+            for item_id, entry in enemy.get('loot_table', {}).items():
+                if isinstance(entry, dict):
+                    min_q = int(entry.get('min', 1))
+                    max_q = int(entry.get('max', min_q))
+                    chance = int(entry.get('chance', 100))
+                else:
+                    min_q, max_q, chance = entry
+                    min_q, max_q, chance = int(min_q), int(max_q), int(chance)
                 if random.randint(1, 100) <= chance:
-                    qty = random.randint(min_q, max_q)
+                    qty = random.randint(min_q, max(min_q, max_q))
                     loot[item_id] = loot.get(item_id, 0) + qty
         return loot
 
     def reward_player(self, player, enemy, exp, loot):
         player.gain_skill_exp('combat', exp)
-        for item, qty in loot.items():
-            player.add_item(item, qty)
-        player.stats['enemies_defeated'] += 1
+        player.stats['enemies_defeated'] = player.stats.get('enemies_defeated', 0) + 1
+        if hasattr(self.game, 'quests') and self.game.quests:
+            self.game.quests.update_quest_progress('enemy_defeated', enemy_type=enemy.get('id'))
         if loot:
             loot_text = ', '.join([f'{self.game.items.get_item_name(i)} x{q}' for i, q in loot.items()])
             self.add_combat_log(f"获得战利品: {loot_text}")

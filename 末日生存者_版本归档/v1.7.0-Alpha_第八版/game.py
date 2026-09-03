@@ -120,6 +120,8 @@ class TextAdventureGame:
             # 动态生成世界
             world_data = self.terrain_gen.generate_map()
             self.world.generate_world(world_data)
+            self.player.location = self.world.current_location_id
+            self.player.discovered_locations = [self.world.current_location_id]
             
             # 初始化其他系统
             self.items.initialize()
@@ -165,7 +167,12 @@ class TextAdventureGame:
                 return
             self.current_save_slot = save_slot
             
-            # 加载各个系统数据
+            self.items.initialize()
+            self.combat.initialize()
+            self.farming.initialize()
+            self.quests.initialize()
+            self.npcs.initialize()
+            self.achievements.initialize()
             self.player.load_data(save_data.get('player', {}))
             self.world.load_data(save_data.get('world', {}))
             self.items.load_data(save_data.get('items', {}))
@@ -174,6 +181,12 @@ class TextAdventureGame:
             self.npcs.load_data(save_data.get('npcs', {}))
             self.achievements.load_data(save_data.get('achievements', {}))
             self.diary.initialize(save_slot)
+            if not self.world.locations:
+                world_data = self.terrain_gen.generate_map()
+                self.world.generate_world(world_data)
+                self.world.load_data(save_data.get('world', {}))
+            if self.player.location in self.world.locations:
+                self.world.current_location_id = self.player.location
             
             # 加载游戏状态
             self.game_time = datetime.fromisoformat(save_data.get('game_time', datetime.now().isoformat()))
@@ -246,9 +259,11 @@ class TextAdventureGame:
         if self.game_state != "playing":
             return
         actual_hours = hours * self.game_speed
+        old_day = self.game_time.date()
         self.game_time += timedelta(hours=actual_hours)
         self.handle_time_advancement(actual_hours)
-        if self.game_time.hour == 0 and actual_hours > 0:
+        days_passed = (self.game_time.date() - old_day).days
+        for _ in range(max(0, days_passed)):
             self.new_day()
     
     def handle_time_advancement(self, hours):
@@ -276,6 +291,9 @@ class TextAdventureGame:
         self.update_weather()
         self.adjust_seasonal_resources()
         self.quests.check_daily_quests()
+        self.npcs.move_wandering_npcs()
+        if self.day_count % 3 == 0:
+            self.npcs.restock_shops()
         self.trigger_random_event()
         self.achievements.check_daily_achievements()
         logging.info(f"进入第{self.day_count}天")
@@ -352,6 +370,8 @@ class TextAdventureGame:
         self.add_game_log(f"现在是第{self.day_count}天，{self.format_time()}，天气{self.get_weather_name()}。")
         self.add_game_log("这个世界充满了危险和机遇，谨慎选择你的每一步行动。")
         self.achievements.unlock("first_step")
+        if 'main_01' in self.quests.quests:
+            self.quests.start_quest('main_01')
     
     def trigger_random_event(self):
         event_chance = random.randint(1, 100)
@@ -419,6 +439,12 @@ class TextAdventureGame:
                 self.action_craft(kwargs.get('recipe_id'), kwargs.get('tier', 2))
             elif action_type == "farm":
                 self.action_farm(kwargs.get('crop_type'))
+            elif action_type == "harvest":
+                self.action_harvest(kwargs.get('plot_id'))
+            elif action_type == "water_crops":
+                self.action_water_crops(kwargs.get('plot_id'))
+            elif action_type == "remove_weeds":
+                self.action_remove_weeds(kwargs.get('plot_id'))
             elif action_type == "move":
                 self.action_move(kwargs.get('location_id'))
             elif action_type == "use_item":
@@ -486,14 +512,8 @@ class TextAdventureGame:
             return
         self.add_game_log(f"你睡了{hours}小时...")
         self.advance_time(hours)
-        stamina_recovery = min(50, self.player.max_stamina - self.player.stamina)
-        health_recovery = min(25, self.player.max_health - self.player.health)
-        mental_recovery = min(40, self.player.max_mental - self.player.mental)
-        self.player.modify_stamina(stamina_recovery)
-        self.player.modify_health(health_recovery)
-        self.player.modify_mental(mental_recovery)
-        self.player.modify_fatigue(-hours * 10)
-        self.add_game_log(f"睡眠后，你恢复了{stamina_recovery}体力、{health_recovery}生命值和{mental_recovery}精神值。")
+        result = self.player.sleep(hours)
+        self.add_game_log(f"睡眠后，你恢复了{int(result['stamina_recovery'])}体力、{int(result['health_recovery'])}生命值和{int(result['mental_recovery'])}精神值。")
     
     def action_eat(self, food_type):
         if not food_type:
@@ -548,6 +568,25 @@ class TextAdventureGame:
             self.player.modify_stamina(-15)
         else:
             self.add_game_log(planting_result['message'])
+
+    def action_harvest(self, plot_id):
+        result = self.farming.harvest_crop(self.player.location, plot_id)
+        self.add_game_log(result['message'])
+        if result.get('success'):
+            self.advance_time(1)
+            self.player.modify_stamina(-8)
+
+    def action_water_crops(self, plot_id=None):
+        result = self.farming.water_crops(self.player.location, plot_id)
+        self.add_game_log(result['message'])
+        if result.get('success'):
+            self.advance_time(0.5)
+
+    def action_remove_weeds(self, plot_id):
+        result = self.farming.remove_weeds(self.player.location, plot_id)
+        self.add_game_log(result['message'])
+        if result.get('success'):
+            self.advance_time(0.5)
     
     def action_craft(self, recipe_id, tier=2):
         if not recipe_id:
@@ -593,7 +632,7 @@ class TextAdventureGame:
     
     def action_fish(self):
         loc = self.world.get_current_location()
-        if loc.terrain not in ["河流", "湖泊"]:
+        if loc.terrain not in ["河流", "湖泊", "river", "lake"]:
             self.add_game_log("只有在水边才能钓鱼。")
             return
         if not self.player.has_item("fishing_rod"):
@@ -618,7 +657,7 @@ class TextAdventureGame:
     
     def action_hunt(self):
         loc = self.world.get_current_location()
-        if loc.terrain not in ["森林", "平原"]:
+        if loc.terrain not in ["森林", "平原", "forest", "plain"]:
             self.add_game_log("只有在森林或平原才能狩猎。")
             return
         weapon = self.player.equipment.get('weapon')
@@ -652,7 +691,7 @@ class TextAdventureGame:
     
     def action_chop_wood(self):
         loc = self.world.get_current_location()
-        if loc.terrain != "森林":
+        if loc.terrain not in ["森林", "forest"]:
             self.add_game_log("只有在森林才能砍柴。")
             return
         if self.player.stamina < 12:
@@ -671,7 +710,7 @@ class TextAdventureGame:
     
     def action_gather_herbs(self):
         loc = self.world.get_current_location()
-        if loc.terrain not in ["森林", "山地"]:
+        if loc.terrain not in ["森林", "山地", "forest", "mountain"]:
             self.add_game_log("只有在森林或山地才能采药。")
             return
         if self.player.stamina < 8:
@@ -754,14 +793,16 @@ class TextAdventureGame:
                     self.player.add_item(item, amount)
     
     def handle_combat_result(self, combat_result):
+        if combat_result.get('escaped'):
+            self.add_game_log("你逃离了战斗。")
+            return
         if combat_result.get('player_won'):
             self.add_game_log(f"你击败了{combat_result['enemy_name']}！")
             if combat_result.get('loot'):
                 for item, amount in combat_result['loot'].items():
                     self.player.add_item(item, amount)
-                    item_name = self.items.get_item_name(item)
-                    self.add_game_log(f"获得了{amount}个{item_name}！")
-            self.achievements.check_combat_achievements(combat_result['enemy_name'])
+                    self.add_game_log(f"获得了{amount}个{self.items.get_item_name(item)}！")
+            self.achievements.check_combat_achievements(combat_result.get('enemy_name', ''))
         else:
             self.add_game_log("战斗失败！你受了重伤。")
             self.player.modify_health(-20)
@@ -847,15 +888,17 @@ class TextAdventureGame:
         """处理用户输入的指令"""
         cmd = cmd.strip().lower()
         if cmd == "help":
-            self.add_game_log("可用指令: help, status, inventory, map, quit")
+            self.add_game_log("可用指令: help, status, inventory, map, sleep, eat, drink, explore, quit")
         elif cmd == "status":
-            self.add_game_log(f"生命: {self.player.health}/{self.player.max_health}, 体力: {self.player.stamina}/{self.player.max_stamina}, 精神: {self.player.mental}/{self.player.max_mental}, 疲劳: {self.player.fatigue}/{self.max_fatigue}")
+            self.add_game_log(f"生命: {self.player.health}/{self.player.max_health}, 体力: {self.player.stamina}/{self.player.max_stamina}, 精神: {self.player.mental}/{self.player.max_mental}, 疲劳: {self.player.fatigue}/{self.max_fatigue}, 金钱: {self.player.money}")
         elif cmd == "inventory":
             items = ", ".join([f"{self.items.get_item_name(i)}({q})" for i,q in self.player.inventory.items()])
             self.add_game_log(f"背包: {items}")
         elif cmd == "map":
             self.ui.show_map()
+        elif cmd in ("sleep", "eat", "drink", "explore"):
+            self.perform_action(cmd)
         elif cmd == "quit":
-            self.game_over("玩家主动退出")
+            self.on_closing()
         else:
             self.add_game_log(f"未知指令: {cmd}")

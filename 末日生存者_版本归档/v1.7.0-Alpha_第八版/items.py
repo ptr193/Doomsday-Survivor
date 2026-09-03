@@ -24,14 +24,27 @@ class ItemSystem:
             self.initialized = True
 
     def load_items_from_file(self):
+        mod_items = self.game.mod_manager.get_data('items', None) or {}
+        mod_recipes = self.game.mod_manager.get_data('recipes', None) or {}
+        if mod_items:
+            self.items = dict(mod_items)
+            self.recipes = dict(mod_recipes)
+            logging.info(f"从MOD管理器加载了 {len(self.items)} 种物品和 {len(self.recipes)} 个配方")
+            return
         data_dir = os.path.join(os.path.dirname(__file__), 'data')
         items_file = os.path.join(data_dir, 'items.json')
         if not os.path.exists(items_file):
             raise FileNotFoundError(f"物品数据文件不存在: {items_file}")
         with open(items_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        self.items = data.get('items', {})
+        self.items = data.get('items', data if isinstance(data, dict) else {})
         self.recipes = data.get('recipes', {})
+        recipes_file = os.path.join(data_dir, 'recipes.json')
+        if os.path.exists(recipes_file):
+            with open(recipes_file, 'r', encoding='utf-8') as f:
+                extra = json.load(f)
+                if isinstance(extra, dict):
+                    self.recipes.update(extra)
         logging.info(f"从 {items_file} 加载了 {len(self.items)} 种物品和 {len(self.recipes)} 个配方")
 
     def create_items(self):

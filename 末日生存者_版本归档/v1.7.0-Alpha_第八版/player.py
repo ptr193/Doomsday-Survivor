@@ -30,6 +30,9 @@ class Player:
         self.stamina_modifier = 1.0
         self.equipment = {'weapon': None, 'head': None, 'chest': None, 'legs': None, 'backpack': None, 'accessory1': None, 'accessory2': None}
         self.inventory = {}
+        self.money = 0
+        self.radiation = 0
+        self.max_radiation = 100
         self.skills = {}
         self.skill_exp = {}
         self.location = "starting_area"
@@ -63,7 +66,10 @@ class Player:
             self.night_penalty = False
             self.stamina_modifier = 1.0
             self.equipment = {'weapon': None, 'head': None, 'chest': None, 'legs': None, 'backpack': None, 'accessory1': None, 'accessory2': None}
-            self.inventory = {'food': 5, 'water': 5, 'materials': 10, 'medicine': 2}
+            self.inventory = {'food': 5, 'water': 5, 'materials': 10, 'medicine': 2, 'seeds': 6, 'wood': 4}
+            self.money = character_data.get('money', 50)
+            self.radiation = 0
+            self.max_radiation = 100
             self.skills = {'survival': 1, 'combat': 1, 'crafting': 1, 'farming': 1, 'medical': 1, 'social': 1, 'intelligence': 1, 'mental': 1}
             self.skill_exp = {'survival': 0, 'combat': 0, 'crafting': 0, 'farming': 0, 'medical': 0, 'social': 0, 'intelligence': 0, 'mental': 0}
             self.location = "starting_area"
@@ -101,6 +107,9 @@ class Player:
             self.stamina_modifier = save_data.get('stamina_modifier', 1.0)
             self.equipment = save_data.get('equipment', {'weapon': None, 'head': None, 'chest': None, 'legs': None, 'backpack': None, 'accessory1': None, 'accessory2': None})
             self.inventory = save_data.get('inventory', {})
+            self.money = save_data.get('money', 0)
+            self.radiation = save_data.get('radiation', 0)
+            self.max_radiation = save_data.get('max_radiation', 100)
             self.skills = save_data.get('skills', {})
             self.skill_exp = save_data.get('skill_exp', {})
             self.location = save_data.get('location', 'starting_area')
@@ -128,6 +137,9 @@ class Player:
             'night_penalty': self.night_penalty, 'stamina_modifier': self.stamina_modifier,
             'equipment': self.equipment,
             'inventory': self.inventory,
+            'money': self.money,
+            'radiation': self.radiation,
+            'max_radiation': self.max_radiation,
             'skills': self.skills,
             'skill_exp': self.skill_exp,
             'location': self.location,
@@ -252,6 +264,19 @@ class Player:
         else:
             self.inventory[item_id] = quantity
         logging.info(f"获得物品: {item_id} x{quantity}")
+        if hasattr(self.game, 'quests') and self.game.quests:
+            self.game.quests.update_quest_progress('item_collected', item_id=item_id, quantity=quantity)
+        return True
+
+    def add_money(self, amount):
+        self.money = max(0, self.money + int(amount))
+        return self.money
+
+    def spend_money(self, amount):
+        amount = int(amount)
+        if self.money < amount:
+            return False
+        self.money -= amount
         return True
 
     def remove_item(self, item_id, quantity=1):
@@ -280,6 +305,11 @@ class Player:
             self.add_item(product, amount)
         self.gain_skill_exp('crafting', recipe.get('exp', 10))
         self.stats['items_crafted'] += 1
+        if hasattr(self.game, 'quests') and self.game.quests:
+            for product in recipe.get('products', {}):
+                self.game.quests.update_quest_progress('item_crafted', item_id=product)
+        if hasattr(self.game, 'achievements') and self.game.achievements:
+            self.game.achievements.check_crafting_achievements()
         return {'success': True, 'message': f"成功制作了{recipe['name']}！"}
 
     def craft_item_with_tier(self, recipe_id, tier, recipe_data):
@@ -295,6 +325,11 @@ class Player:
         exp = recipe_data.get('exp', 10) * (tier // 2 + 0.5)
         self.gain_skill_exp('crafting', int(exp))
         self.stats['items_crafted'] += 1
+        if hasattr(self.game, 'quests') and self.game.quests:
+            for product in products:
+                self.game.quests.update_quest_progress('item_crafted', item_id=product)
+        if hasattr(self.game, 'achievements') and self.game.achievements:
+            self.game.achievements.check_crafting_achievements()
         return {'success': True, 'message': f"成功制作了{recipe_data['name']}！"}
 
     def enchant_item(self, item_id, enchant_data):
@@ -417,10 +452,11 @@ class Player:
         }
 
     def sleep(self, hours):
-        self.last_sleep_time = self.game.game_time
+        self.last_sleep_time = self.game.game_time.isoformat() if self.game.game_time else None
         self.continuous_awake_hours = 0
         location = self.game.world.get_current_location()
-        multiplier = 1.5 if location.safety_level >= 8 else 0.5 if location.safety_level <= 3 else 1.0
+        safety = location.safety_level if location else 5
+        multiplier = 1.5 if safety >= 8 else 0.5 if safety <= 3 else 1.0
         stamina_recovery = min(50 * multiplier, self.max_stamina - self.stamina)
         health_recovery = min(25 * multiplier, self.max_health - self.health)
         mental_recovery = min(40 * multiplier, self.max_mental - self.mental)
