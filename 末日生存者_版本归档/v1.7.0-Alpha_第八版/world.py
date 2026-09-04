@@ -19,6 +19,11 @@ class Location:
     y: float = 0
     discovered: bool = False
     explored: bool = False
+    structures: List[str] = None
+
+    def __post_init__(self):
+        if self.structures is None:
+            self.structures = []
 
 class GameWorld:
     def __init__(self, game):
@@ -61,7 +66,8 @@ class GameWorld:
                 special_events=loc_info.get('special_events', []),
                 x=loc_info.get('x', 0),
                 y=loc_info.get('y', 0),
-                discovered=bool(loc_info.get('discovered', loc_id == "starting_area"))
+                discovered=bool(loc_info.get('discovered', loc_id == "starting_area")),
+                structures=list(loc_info.get('structures', []))
             )
         start_id = "starting_area" if "starting_area" in self.locations else next(iter(self.locations), None)
         self.current_location_id = start_id
@@ -168,9 +174,17 @@ class GameWorld:
             id="ancient_ruins", name="古代遗迹",
             description="神秘的古代建筑遗迹，隐藏着古老的秘密。",
             terrain="urban", safety_level=3, resources={"ancient_artifacts": 5, "stone": 4},
-            connected_locations=["deep_forest"],
+            connected_locations=["deep_forest", "research_lab"],
             special_events=["artifact_discovery", "ancient_trap", "historical_insight"],
             x=150, y=100
+        )
+        self.locations["research_lab"] = Location(
+            id="research_lab", name="研究实验室",
+            description="半倒塌的地下实验室，残留着未完成的实验。",
+            terrain="urban", safety_level=3, resources={"research_data": 4, "electronic": 3, "materials": 2},
+            connected_locations=["ancient_ruins"],
+            special_events=["lab_records", "unstable_experiment", "radiation_leak"],
+            x=80, y=180
         )
         self.locations["mountain_path"] = Location(
             id="mountain_path", name="山路",
@@ -232,7 +246,8 @@ class GameWorld:
                         x=loc_data.get('x', 0),
                         y=loc_data.get('y', 0),
                         discovered=loc_data.get('discovered', False),
-                        explored=loc_data.get('explored', False)
+                        explored=loc_data.get('explored', False),
+                        structures=list(loc_data.get('structures', []))
                     )
             else:
                 if not self.locations:
@@ -241,6 +256,7 @@ class GameWorld:
                     if loc_id in self.locations:
                         self.locations[loc_id].discovered = loc_data.get('discovered', False)
                         self.locations[loc_id].explored = loc_data.get('explored', False)
+                        self.locations[loc_id].structures = list(loc_data.get('structures', getattr(self.locations[loc_id], 'structures', []) or []))
             self.current_location_id = save_data.get('current_location_id', 'starting_area')
             if self.current_location_id not in self.locations and self.locations:
                 self.current_location_id = next(iter(self.locations))
@@ -264,7 +280,8 @@ class GameWorld:
                 'x': location.x,
                 'y': location.y,
                 'discovered': location.discovered,
-                'explored': location.explored
+                'explored': location.explored,
+                'structures': list(getattr(location, 'structures', []) or [])
             }
         return {
             'current_location_id': self.current_location_id,

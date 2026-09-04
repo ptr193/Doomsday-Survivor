@@ -1058,59 +1058,71 @@ class GameUI:
     def show_construction(self):
         win = tk.Toplevel(self.root)
         win.title("建造")
-        win.geometry("600x400")
-        structures = [
-            {"name": "简易庇护所", "materials": {"wood": 10, "cloth": 5}, "description": "提供基本防护"},
-            {"name": "储物箱", "materials": {"wood": 5, "metal": 2}, "description": "增加存储空间"},
-            {"name": "工作台", "materials": {"wood": 8, "metal": 3}, "description": "便于制作物品"},
-            {"name": "农田围栏", "materials": {"wood": 15, "materials": 5}, "description": "保护农作物"}
-        ]
-        for structure in structures:
+        win.geometry("600x420")
+        location = self.game.world.get_current_location()
+        built = set(getattr(location, 'structures', []) or []) if location else set()
+        loc_name = location.name if location else "未知地点"
+        ttk.Label(win, text=f"当前地点: {loc_name}", style="Subtitle.TLabel").pack(anchor="w", padx=10, pady=(8, 4))
+        for structure in self.game.get_buildable_structures():
             frame = ttk.Frame(win, relief="solid", padding=10)
             frame.pack(fill="x", padx=10, pady=5)
             ttk.Label(frame, text=structure["name"], style="Subtitle.TLabel").pack(anchor="w")
             ttk.Label(frame, text=structure["description"]).pack(anchor="w")
             materials_text = "需要: " + ", ".join([f"{self.game.items.get_item_name(mat)}x{amt}" for mat, amt in structure["materials"].items()])
             ttk.Label(frame, text=materials_text, style="Status.TLabel").pack(anchor="w")
-            can_build = all(self.game.player.has_item(mat, amt) for mat, amt in structure["materials"].items())
-            button_text = "建造" if can_build else "材料不足"
-            button_state = "normal" if can_build else "disabled"
-            ttk.Button(frame, text=button_text, state=button_state, command=lambda s=structure: self.build_structure(s)).pack(anchor="e")
+            already = structure["id"] in built
+            can_build = (not already) and all(self.game.player.has_item(mat, amt) for mat, amt in structure["materials"].items())
+            if already:
+                button_text, button_state = "已建成", "disabled"
+            elif can_build:
+                button_text, button_state = "建造", "normal"
+            else:
+                button_text, button_state = "材料不足", "disabled"
+            ttk.Button(frame, text=button_text, state=button_state, command=lambda s=structure, w=win: self.build_structure(s, w)).pack(anchor="e")
         ttk.Button(win, text="关闭", command=win.destroy).pack(pady=10)
     
-    def build_structure(self, structure):
-        for material, amount in structure["materials"].items():
-            self.game.player.remove_item(material, amount)
-        messagebox.showinfo("建造完成", f"成功建造了{structure['name']}！")
+    def build_structure(self, structure, win=None):
+        result = self.game.action_build(structure["id"])
+        if result.get('success'):
+            messagebox.showinfo("建造完成", result['message'])
+            if win:
+                win.destroy()
+                self.show_construction()
+        else:
+            messagebox.showwarning("建造失败", result.get('message', '无法建造'))
     
     def show_research(self):
         win = tk.Toplevel(self.root)
         win.title("研究")
-        win.geometry("500x300")
-        research_projects = [
-            {"name": "基础农业技术", "cost": {"research_data": 5}, "description": "提高农作物产量"},
-            {"name": "简易医疗知识", "cost": {"research_data": 3}, "description": "解锁新的医疗配方"},
-            {"name": "武器改良技术", "cost": {"research_data": 8}, "description": "提高武器伤害"},
-            {"name": "能源利用技术", "cost": {"research_data": 10}, "description": "解锁新的能源设备"}
-        ]
-        for project in research_projects:
+        win.geometry("520x420")
+        done = set(getattr(self.game, 'completed_research', []) or [])
+        for project in self.game.get_research_projects():
             frame = ttk.Frame(win, relief="solid", padding=10)
             frame.pack(fill="x", padx=10, pady=5)
             ttk.Label(frame, text=project["name"], style="Subtitle.TLabel").pack(anchor="w")
             ttk.Label(frame, text=project["description"]).pack(anchor="w")
-            cost_text = "需要研究资料: " + ", ".join([f"{amt}个" for amt in project["cost"].values()])
+            cost_text = "需要: " + ", ".join([f"{self.game.items.get_item_name(mat)}x{amt}" for mat, amt in project["cost"].items()])
             ttk.Label(frame, text=cost_text, style="Status.TLabel").pack(anchor="w")
-            can_research = all(self.game.player.has_item(mat, amt) for mat, amt in project["cost"].items())
-            button_text = "研究" if can_research else "资料不足"
-            button_state = "normal" if can_research else "disabled"
-            ttk.Button(frame, text=button_text, state=button_state, command=lambda p=project: self.start_research(p)).pack(anchor="e")
+            already = project["id"] in done
+            can_research = (not already) and all(self.game.player.has_item(mat, amt) for mat, amt in project["cost"].items())
+            if already:
+                button_text, button_state = "已完成", "disabled"
+            elif can_research:
+                button_text, button_state = "研究", "normal"
+            else:
+                button_text, button_state = "资料不足", "disabled"
+            ttk.Button(frame, text=button_text, state=button_state, command=lambda p=project, w=win: self.start_research(p, w)).pack(anchor="e")
         ttk.Button(win, text="关闭", command=win.destroy).pack(pady=10)
     
-    def start_research(self, project):
-        for material, amount in project["cost"].items():
-            self.game.player.remove_item(material, amount)
-        self.game.perform_action("research")
-        messagebox.showinfo("研究开始", f"开始研究{project['name']}！")
+    def start_research(self, project, win=None):
+        result = self.game.action_research(project["id"])
+        if result.get('success'):
+            messagebox.showinfo("研究完成", result['message'])
+            if win:
+                win.destroy()
+                self.show_research()
+        else:
+            messagebox.showwarning("研究失败", result.get('message', '无法研究'))
     
     def show_social(self):
         win = tk.Toplevel(self.root)
@@ -1240,7 +1252,51 @@ class GameUI:
         ttk.Button(parent, text="出售", command=sell_selected).pack(pady=5)
     
     def show_repair_dialog(self):
-        messagebox.showinfo("修理", "修理功能将在后续版本完善")
+        win = tk.Toplevel(self.root)
+        win.title("修理")
+        win.geometry("520x420")
+        ttk.Label(win, text="可修理物品", style="Subtitle.TLabel").pack(anchor="w", padx=10, pady=(8, 4))
+        candidates = []
+        seen = set()
+        for item_id in list(self.game.player.inventory.keys()) + list(self.game.player.equipment.values()):
+            if not item_id or item_id in seen:
+                continue
+            seen.add(item_id)
+            max_d = self.game.player.get_item_max_durability(item_id)
+            if not max_d:
+                continue
+            current = self.game.player.get_item_durability(item_id)
+            candidates.append((item_id, current, max_d))
+        if not candidates:
+            ttk.Label(win, text="没有可修理的装备或工具").pack(pady=20)
+            ttk.Button(win, text="关闭", command=win.destroy).pack(pady=10)
+            return
+        for item_id, current, max_d in candidates:
+            frame = ttk.Frame(win, relief="solid", padding=8)
+            frame.pack(fill="x", padx=10, pady=4)
+            name = self.game.items.get_item_name(item_id)
+            ttk.Label(frame, text=f"{name}  耐久 {current}/{max_d}").pack(anchor="w")
+            cost = self.game.player.get_repair_cost(item_id)
+            if current >= max_d:
+                ttk.Label(frame, text="完好，无需修理", style="Status.TLabel").pack(anchor="w")
+                continue
+            cost_text = f"需要: 金属x{cost['metal']}、材料x{cost['materials']}"
+            ttk.Label(frame, text=cost_text, style="Status.TLabel").pack(anchor="w")
+            can_repair = self.game.player.has_item('metal', cost['metal']) and self.game.player.has_item('materials', cost['materials'])
+            button_text = "修理" if can_repair else "材料不足"
+            button_state = "normal" if can_repair else "disabled"
+            ttk.Button(frame, text=button_text, state=button_state, command=lambda iid=item_id, w=win: self.do_repair(iid, w)).pack(anchor="e")
+        ttk.Button(win, text="关闭", command=win.destroy).pack(pady=10)
+
+    def do_repair(self, item_id, win):
+        result = self.game.player.repair_item(item_id)
+        if result.get('success'):
+            self.game.advance_time(2)
+            messagebox.showinfo("修理完成", result['message'])
+            win.destroy()
+            self.show_repair_dialog()
+        else:
+            messagebox.showwarning("修理失败", result.get('message', '无法修理'))
     
     def show_pause_menu(self):
         if hasattr(self, 'pause_window') and self.pause_window:

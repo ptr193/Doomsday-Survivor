@@ -31,7 +31,12 @@ class FarmingSystem:
             self.initialized = True
 
     def load_crops_from_file(self):
-        """从外部 JSON 文件加载农作物数据"""
+        """从 ModManager 或 JSON 文件加载农作物数据"""
+        mod_crops = self.game.mod_manager.get_data('crops', None) or {}
+        if mod_crops:
+            self.crops = dict(mod_crops)
+            logging.info(f"从MOD管理器加载了 {len(self.crops)} 种农作物")
+            return
         data_dir = os.path.join(os.path.dirname(__file__), 'data')
         crops_file = os.path.join(data_dir, 'crops.json')
         if not os.path.exists(crops_file):
@@ -168,6 +173,9 @@ class FarmingSystem:
             return {'success': False, 'message': f"{crop_data['name']}不适合在当前季节种植"}
 
         self.game.player.remove_item('seeds', crop_data['seed_cost'])
+        hoe = 'iron_hoe' if self.game.player.has_item('iron_hoe') else 'wooden_hoe' if self.game.player.has_item('wooden_hoe') else None
+        if hoe:
+            self.game.player.degrade_item(hoe, 1)
         plot['crop_type'] = crop_type
         plot['planting_date'] = self.game.game_time
         plot['growth_stage'] = 0
@@ -260,10 +268,14 @@ class FarmingSystem:
             health_loss = (20 - plot['water_level']) * 0.1
             plot['health'] = max(0, plot['health'] - health_loss)
 
-        # 随机害虫杂草
-        if random.random() < 0.01:
+        pest_chance = 0.01
+        weed_chance = 0.02
+        if farmland.get('upgrades', {}).get('fence'):
+            pest_chance *= 0.35
+            weed_chance *= 0.6
+        if random.random() < pest_chance:
             plot['pest_infestation'] = min(100, plot['pest_infestation'] + 10)
-        if random.random() < 0.02:
+        if random.random() < weed_chance:
             plot['weeds'] = min(100, plot['weeds'] + 5)
 
         # 害虫杂草损害
@@ -298,6 +310,8 @@ class FarmingSystem:
         self.game.player.modify_stamina(-10)
         for plot in plots_to_water:
             plot['water_level'] = min(100, plot['water_level'] + 40)
+        if self.game.player.has_item('watering_can'):
+            self.game.player.degrade_item('watering_can', 1)
 
         return {'success': True, 'message': f'成功为{len(plots_to_water)}块地浇水'}
 
@@ -316,6 +330,8 @@ class FarmingSystem:
 
         min_yield, max_yield = crop_data['yield_amount']
         base_yield = random.randint(min_yield, max_yield)
+        if 'basic_farming' in getattr(self.game, 'completed_research', []):
+            base_yield = int(base_yield * 1.25)
         final_yield = int(base_yield * (plot['health'] / 100))
         if final_yield <= 0:
             return {'success': False, 'message': '作物已经完全枯萎'}

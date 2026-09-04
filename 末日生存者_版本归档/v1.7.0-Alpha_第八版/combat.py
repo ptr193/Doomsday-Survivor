@@ -198,6 +198,9 @@ class CombatSystem:
             self.add_combat_log(f"💥 暴击！你对{enemy['name']}造成了{damage}点伤害！")
         else:
             self.add_combat_log(f"⚔️ 你对{enemy['name']}造成了{damage}点伤害！")
+        weapon = player.equipment.get('weapon')
+        if weapon and attack.get('is_hit', True):
+            player.degrade_item(weapon, 1)
         self.check_enemy_ability_use(enemy, player, 'defensive')
 
     def enemy_turn(self, player, enemy):
@@ -218,6 +221,8 @@ class CombatSystem:
             wdata = self.game.items.get_item_data(weapon)
             if wdata:
                 base += wdata.get('damage', 0)
+        if 'weapon_upgrade' in getattr(self.game, 'completed_research', []):
+            base += 2
         damage = max(1, base + random.randint(-2, 2))
         crit = random.random() < (stats['critical'] / 100.0)
         if crit:
@@ -263,6 +268,11 @@ class CombatSystem:
                     defense = int(defense * (1 - buff['value']))
             actual = max(1, damage - defense // 2)
             target.modify_health(-actual)
+            for slot in ('chest', 'head', 'legs'):
+                armor = target.equipment.get(slot)
+                if armor:
+                    target.degrade_item(armor, 1)
+                    break
             return actual
 
     def get_ability_data(self, ability_id):

@@ -23,7 +23,8 @@ class ModManager:
             'terrains': {},
             'commands': {},
             'recipes': {},
-            'stories': {}
+            'stories': {},
+            'crops': {}
         }
 
     def initialize(self):
@@ -51,6 +52,7 @@ class ModManager:
         self._load_json_file(os.path.join(self.base_path, 'commands.json'), 'commands')
         # 加载 recipes.json（可选，可合并到items.json）
         self._load_json_file(os.path.join(self.base_path, 'recipes.json'), 'recipes')
+        self._load_json_file(os.path.join(self.base_path, 'crops.json'), 'crops')
         # 加载 stories（从data/stories/*.txt）
         self._load_stories_from_dir(os.path.join(self.base_path, 'stories'))
 

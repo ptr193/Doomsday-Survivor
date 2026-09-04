@@ -33,6 +33,7 @@ class TextAdventureGame:
         self.radiation_level = 0
         self.fatigue = 0              # 疲劳值 0-100
         self.max_fatigue = 100
+        self.completed_research = []
         
         # 天气影响因子
         self.weather_effects = {}
@@ -141,6 +142,7 @@ class TextAdventureGame:
             self.temperature = 20
             self.radiation_level = 0
             self.fatigue = 0
+            self.completed_research = []
             
             # 应用初始天气效果
             self.apply_weather_effect()
@@ -180,6 +182,7 @@ class TextAdventureGame:
             self.quests.load_data(save_data.get('quests', {}))
             self.npcs.load_data(save_data.get('npcs', {}))
             self.achievements.load_data(save_data.get('achievements', {}))
+            self.story_reader.load_data(save_data.get('stories', {}))
             self.diary.initialize(save_slot)
             if not self.world.locations:
                 world_data = self.terrain_gen.generate_map()
@@ -196,6 +199,7 @@ class TextAdventureGame:
             self.temperature = save_data.get('temperature', 20)
             self.radiation_level = save_data.get('radiation_level', 0)
             self.fatigue = save_data.get('fatigue', 0)
+            self.completed_research = list(save_data.get('completed_research', []))
             
             # 应用天气效果
             self.apply_weather_effect()
@@ -225,6 +229,7 @@ class TextAdventureGame:
                 'quests': self.quests.get_save_data(),
                 'npcs': self.npcs.get_save_data(),
                 'achievements': self.achievements.get_save_data(),
+                'stories': self.story_reader.get_save_data(),
                 'game_time': self.game_time.isoformat(),
                 'day_count': self.day_count,
                 'weather': self.weather,
@@ -232,6 +237,7 @@ class TextAdventureGame:
                 'temperature': self.temperature,
                 'radiation_level': self.radiation_level,
                 'fatigue': self.fatigue,
+                'completed_research': list(self.completed_research),
                 'save_time': datetime.now().isoformat(),
                 'version': self.version
             }
@@ -363,7 +369,40 @@ class TextAdventureGame:
             self.player.modify_health(-3)
     
     def adjust_seasonal_resources(self):
-        pass
+        """按季节刷新各地点可再生资源。"""
+        if not getattr(self.world, 'locations', None):
+            return
+        season_mods = {
+            "spring": {"food": 1.3, "water": 1.2, "wood": 1.1, "medicine": 1.2, "rare_herbs": 1.3, "materials": 1.0, "stone": 0.9},
+            "summer": {"food": 1.1, "water": 0.8, "wood": 1.0, "medicine": 1.0, "rare_herbs": 0.9, "materials": 1.1, "stone": 1.0},
+            "autumn": {"food": 1.4, "water": 1.0, "wood": 1.2, "medicine": 0.9, "rare_herbs": 1.1, "materials": 1.0, "stone": 1.0},
+            "winter": {"food": 0.6, "water": 0.7, "wood": 0.8, "medicine": 0.7, "rare_herbs": 0.5, "materials": 0.9, "stone": 1.2}
+        }
+        mods = season_mods.get(self.season, season_mods["spring"])
+        weather_mod = self.weather_effects.get("resource_mod", 1.0)
+        refreshed = 0
+        for location in self.world.locations.values():
+            terrain_cfg = None
+            if hasattr(self, 'terrain_gen') and self.terrain_gen:
+                terrain_cfg = self.terrain_gen.terrain_types.get(location.terrain)
+            if terrain_cfg and terrain_cfg.resource_distribution:
+                for res_type, prob in terrain_cfg.resource_distribution.items():
+                    chance = min(0.95, prob * mods.get(res_type, 1.0) * weather_mod)
+                    if random.random() < chance:
+                        gain = max(1, int(random.randint(1, 2) * mods.get(res_type, 1.0) * weather_mod))
+                        location.resources[res_type] = location.resources.get(res_type, 0) + gain
+                        refreshed += gain
+            else:
+                for res_type in list(location.resources.keys()):
+                    current = location.resources.get(res_type, 0)
+                    if current <= 0:
+                        continue
+                    location.resources[res_type] = max(1, int(current * mods.get(res_type, 1.0) * weather_mod))
+        if self.day_count % 30 == 0:
+            season_names = {"spring": "春季", "summer": "夏季", "autumn": "秋季", "winter": "冬季"}
+            self.add_game_log(f"{season_names.get(self.season, self.season)}改变了各地资源分布。")
+        if refreshed:
+            logging.info(f"季节资源刷新，新增约 {refreshed} 点资源")
     
     def trigger_initial_events(self):
         self.add_game_log(f"欢迎，{self.player.name}！你开始了在末日世界的生存之旅。")
@@ -460,9 +499,11 @@ class TextAdventureGame:
             elif action_type == "trade":
                 self.action_trade()
             elif action_type == "repair":
-                self.action_repair()
+                self.action_repair(kwargs.get('item_id'))
+            elif action_type == "build":
+                self.action_build(kwargs.get('structure_id'))
             elif action_type == "research":
-                self.action_research()
+                self.action_research(kwargs.get('project_id'))
             elif action_type == "meditate":
                 self.action_meditate()
             else:
@@ -654,6 +695,7 @@ class TextAdventureGame:
             self.player.gain_skill_exp('survival', 6)
         else:
             self.add_game_log("今天运气不佳，一条鱼也没钓到。")
+        self.player.degrade_item("fishing_rod", 1)
     
     def action_hunt(self):
         loc = self.world.get_current_location()
@@ -688,6 +730,8 @@ class TextAdventureGame:
                 self.add_game_log(f"狩猎失败，你被动物反击，受到了{damage}点伤害！")
             else:
                 self.add_game_log("狩猎失败，什么也没抓到。")
+        if weapon:
+            self.player.degrade_item(weapon, 1)
     
     def action_chop_wood(self):
         loc = self.world.get_current_location()
@@ -733,23 +777,125 @@ class TextAdventureGame:
     def action_trade(self):
         self.ui.show_trade_dialog()
     
-    def action_repair(self):
-        self.ui.show_repair_dialog()
-    
-    def action_research(self):
+    def action_repair(self, item_id=None):
         if self.game_state != "playing":
             return
-        if not self.player.has_item("research_data"):
-            self.add_game_log("你需要研究资料才能进行研究。")
+        if not item_id:
+            self.ui.show_repair_dialog()
             return
+        result = self.player.repair_item(item_id)
+        self.add_game_log(result['message'])
+        if result.get('success'):
+            self.advance_time(2)
+
+    def get_buildable_structures(self):
+        return [
+            {
+                "id": "shelter", "name": "简易庇护所",
+                "materials": {"wood": 10, "cloth": 5, "materials": 8},
+                "description": "提高当前地点安全性，睡眠恢复更好",
+                "effects": {"safety": 2}
+            },
+            {
+                "id": "storage_box", "name": "储物箱",
+                "materials": {"wood": 5, "metal": 2},
+                "description": "在当前地点存放多余物资",
+                "effects": {"storage": True}
+            },
+            {
+                "id": "workbench", "name": "工作台",
+                "materials": {"wood": 8, "metal": 3},
+                "description": "降低制作消耗，提升修理效果",
+                "effects": {"crafting_bonus": 1}
+            },
+            {
+                "id": "farm_fence", "name": "农田围栏",
+                "materials": {"wood": 15, "materials": 5},
+                "description": "保护农作物，减少野兽破坏",
+                "effects": {"farm_fence": True}
+            }
+        ]
+
+    def action_build(self, structure_id):
+        if self.game_state != "playing":
+            return {'success': False, 'message': '当前无法建造'}
+        structure = next((s for s in self.get_buildable_structures() if s['id'] == structure_id), None)
+        if not structure:
+            return {'success': False, 'message': '未知建筑'}
+        location = self.world.get_current_location()
+        if not location:
+            return {'success': False, 'message': '未知地点'}
+        if structure_id in getattr(location, 'structures', []):
+            return {'success': False, 'message': f'{location.name}已经有{structure["name"]}'}
+        for material, amount in structure['materials'].items():
+            if not self.player.has_item(material, amount):
+                return {'success': False, 'message': f"材料不足，需要{self.items.get_item_name(material)}x{amount}"}
+        if self.player.stamina < 12:
+            return {'success': False, 'message': '体力不足，无法建造'}
+        for material, amount in structure['materials'].items():
+            self.player.remove_item(material, amount)
+        self.player.modify_stamina(-12)
+        self.advance_time(2)
+        if not hasattr(location, 'structures') or location.structures is None:
+            location.structures = []
+        location.structures.append(structure_id)
+        effects = structure.get('effects', {})
+        if effects.get('safety'):
+            location.safety_level = min(10, location.safety_level + int(effects['safety']))
+        if effects.get('farm_fence') and hasattr(self, 'farming'):
+            farmland = self.farming.farmlands.get(location.id)
+            if farmland:
+                farmland.setdefault('upgrades', {})['fence'] = True
+        self.player.gain_skill_exp('crafting', 20)
+        self.player.stats['items_crafted'] = self.player.stats.get('items_crafted', 0) + 1
+        if hasattr(self, 'quests') and self.quests:
+            self.quests.update_quest_progress('item_crafted', item_id=structure_id)
+            self.quests.update_quest_progress('structure_built', structure=structure_id)
+        message = f"在{location.name}建造了{structure['name']}！"
+        self.add_game_log(message)
+        return {'success': True, 'message': message}
+    
+    def get_research_projects(self):
+        return [
+            {"id": "basic_farming", "name": "基础农业技术", "cost": {"research_data": 5}, "description": "提高农作物产量"},
+            {"id": "basic_medical", "name": "简易医疗知识", "cost": {"research_data": 3}, "description": "解锁新的医疗配方"},
+            {"id": "weapon_upgrade", "name": "武器改良技术", "cost": {"research_data": 8}, "description": "提高武器伤害"},
+            {"id": "energy_tech", "name": "能源利用技术", "cost": {"research_data": 10}, "description": "解锁简易能源设备"}
+        ]
+
+    def action_research(self, project_id=None):
+        if self.game_state != "playing":
+            return {'success': False, 'message': '当前无法研究'}
         if self.player.stamina < 5:
             self.add_game_log("体力不足，无法研究。")
-            return
+            return {'success': False, 'message': '体力不足，无法研究'}
+        if not project_id:
+            if not self.player.has_item("research_data"):
+                self.add_game_log("你需要研究资料才能进行研究。")
+                return {'success': False, 'message': '你需要研究资料才能进行研究'}
+            self.player.modify_stamina(-5)
+            self.player.remove_item("research_data", 1)
+            self.advance_time(3)
+            self.player.gain_skill_exp('intelligence', 15)
+            self.add_game_log("你花时间研究了科技资料，获得了一些新知识。")
+            return {'success': True, 'message': '研究完成'}
+        project = next((p for p in self.get_research_projects() if p['id'] == project_id), None)
+        if not project:
+            return {'success': False, 'message': '未知研究项目'}
+        if project_id in self.completed_research:
+            return {'success': False, 'message': f'{project["name"]}已经完成'}
+        for material, amount in project['cost'].items():
+            if not self.player.has_item(material, amount):
+                return {'success': False, 'message': f"资料不足，需要{self.items.get_item_name(material)}x{amount}"}
+        for material, amount in project['cost'].items():
+            self.player.remove_item(material, amount)
         self.player.modify_stamina(-5)
-        self.player.remove_item("research_data", 1)
         self.advance_time(3)
-        self.player.gain_skill_exp('intelligence', 15)
-        self.add_game_log("你花时间研究了科技资料，获得了一些新知识。")
+        self.player.gain_skill_exp('intelligence', 20)
+        self.completed_research.append(project_id)
+        message = f"完成研究：{project['name']}！"
+        self.add_game_log(message)
+        return {'success': True, 'message': message}
     
     def action_meditate(self):
         if self.game_state != "playing":

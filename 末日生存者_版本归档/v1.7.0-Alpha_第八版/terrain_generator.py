@@ -107,7 +107,7 @@ class TerrainGenerator:
             "ancient_ruins": {
                 "name": "古代遗迹", "description": "神秘的古代建筑遗迹，隐藏着古老的秘密。",
                 "terrain": "urban", "safety": 3, "x": 150, "y": 100,
-                "connected": ["deep_forest"]
+                "connected": ["deep_forest", "research_lab"]
             },
             "mountain_path": {
                 "name": "山路", "description": "陡峭的山路，通向更高的地方。",
@@ -133,6 +133,11 @@ class TerrainGenerator:
                 "name": "山顶", "description": "山脉的最高点，可以俯瞰整个区域。",
                 "terrain": "mountain", "safety": 6, "x": 720, "y": 90,
                 "connected": ["mountain_path"]
+            },
+            "research_lab": {
+                "name": "研究实验室", "description": "半倒塌的地下实验室，残留着未完成的实验。",
+                "terrain": "urban", "safety": 3, "x": 80, "y": 180,
+                "connected": ["ancient_ruins"]
             }
         }
         extra_terrains = list(self.terrain_types.keys()) or ["plain"]

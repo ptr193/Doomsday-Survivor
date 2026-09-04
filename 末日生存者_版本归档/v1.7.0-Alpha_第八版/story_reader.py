@@ -21,6 +21,15 @@ class StoryReader:
         self.initialized = True
         logging.info(f"故事阅读器初始化完成，已解锁 {len(self.unlocked_stories)} 个故事")
 
+    def load_data(self, save_data):
+        self.reload_stories()
+        saved = save_data.get('unlocked_stories', []) if save_data else []
+        self.unlocked_stories = set(saved) if saved else set(self.unlocked_stories)
+        self.initialized = True
+
+    def get_save_data(self):
+        return {'unlocked_stories': list(self.unlocked_stories)}
+
     def reload_stories(self):
         """从 ModManager 重新加载故事数据"""
         self.stories = self.game.mod_manager.get_data('stories', None) or {}

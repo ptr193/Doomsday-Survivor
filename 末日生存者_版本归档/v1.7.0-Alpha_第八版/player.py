@@ -30,6 +30,7 @@ class Player:
         self.stamina_modifier = 1.0
         self.equipment = {'weapon': None, 'head': None, 'chest': None, 'legs': None, 'backpack': None, 'accessory1': None, 'accessory2': None}
         self.inventory = {}
+        self.item_durability = {}
         self.money = 0
         self.radiation = 0
         self.max_radiation = 100
@@ -67,6 +68,7 @@ class Player:
             self.stamina_modifier = 1.0
             self.equipment = {'weapon': None, 'head': None, 'chest': None, 'legs': None, 'backpack': None, 'accessory1': None, 'accessory2': None}
             self.inventory = {'food': 5, 'water': 5, 'materials': 10, 'medicine': 2, 'seeds': 6, 'wood': 4}
+            self.item_durability = {}
             self.money = character_data.get('money', 50)
             self.radiation = 0
             self.max_radiation = 100
@@ -107,6 +109,7 @@ class Player:
             self.stamina_modifier = save_data.get('stamina_modifier', 1.0)
             self.equipment = save_data.get('equipment', {'weapon': None, 'head': None, 'chest': None, 'legs': None, 'backpack': None, 'accessory1': None, 'accessory2': None})
             self.inventory = save_data.get('inventory', {})
+            self.item_durability = save_data.get('item_durability', {})
             self.money = save_data.get('money', 0)
             self.radiation = save_data.get('radiation', 0)
             self.max_radiation = save_data.get('max_radiation', 100)
@@ -137,6 +140,7 @@ class Player:
             'night_penalty': self.night_penalty, 'stamina_modifier': self.stamina_modifier,
             'equipment': self.equipment,
             'inventory': self.inventory,
+            'item_durability': self.item_durability,
             'money': self.money,
             'radiation': self.radiation,
             'max_radiation': self.max_radiation,
@@ -263,6 +267,9 @@ class Player:
             self.inventory[item_id] += quantity
         else:
             self.inventory[item_id] = quantity
+        max_d = self.get_item_max_durability(item_id)
+        if max_d and item_id not in self.item_durability:
+            self.item_durability[item_id] = max_d
         logging.info(f"获得物品: {item_id} x{quantity}")
         if hasattr(self.game, 'quests') and self.game.quests:
             self.game.quests.update_quest_progress('item_collected', item_id=item_id, quantity=quantity)
@@ -285,8 +292,92 @@ class Player:
         self.inventory[item_id] -= quantity
         if self.inventory[item_id] <= 0:
             del self.inventory[item_id]
+            if item_id not in self.equipment.values():
+                self.item_durability.pop(item_id, None)
         logging.info(f"消耗物品: {item_id} x{quantity}")
         return True
+
+    def owns_item(self, item_id):
+        return self.has_item(item_id) or item_id in self.equipment.values()
+
+    def get_item_max_durability(self, item_id):
+        item_data = self.game.items.get_item_data(item_id) if hasattr(self.game, 'items') else None
+        if not item_data:
+            return 0
+        return int(item_data.get('durability', 0) or 0)
+
+    def get_item_durability(self, item_id):
+        max_d = self.get_item_max_durability(item_id)
+        if not max_d:
+            return None
+        return self.item_durability.get(item_id, max_d)
+
+    def degrade_item(self, item_id, amount=1):
+        max_d = self.get_item_max_durability(item_id)
+        if not max_d or not item_id:
+            return False
+        current = self.item_durability.get(item_id, max_d) - amount
+        item_name = self.game.items.get_item_name(item_id)
+        if current <= 0:
+            self.item_durability.pop(item_id, None)
+            broken_slot = None
+            for slot, equipped in self.equipment.items():
+                if equipped == item_id:
+                    broken_slot = slot
+                    break
+            if broken_slot:
+                self.equipment[broken_slot] = None
+            elif self.has_item(item_id):
+                self.remove_item(item_id, 1)
+            self.game.add_game_log(f"{item_name}损坏了！")
+            return True
+        self.item_durability[item_id] = current
+        if current <= max(3, max_d // 10):
+            self.game.add_game_log(f"{item_name}几乎损坏了（耐久{current}/{max_d}）。")
+        return False
+
+    def get_repair_cost(self, item_id):
+        max_d = self.get_item_max_durability(item_id)
+        current = self.get_item_durability(item_id)
+        if not max_d or current is None:
+            return None
+        missing = max(0, max_d - current)
+        if missing <= 0:
+            return {'metal': 0, 'materials': 0, 'missing': 0}
+        skill = self.skills.get('crafting', 1)
+        metal_cost = max(1, missing // 15 - skill // 5)
+        mat_cost = max(1, missing // 20 - skill // 6)
+        return {'metal': metal_cost, 'materials': mat_cost, 'missing': missing}
+
+    def repair_item(self, item_id):
+        max_d = self.get_item_max_durability(item_id)
+        if not max_d:
+            return {'success': False, 'message': '该物品无法修理'}
+        if not self.owns_item(item_id):
+            return {'success': False, 'message': '你没有这件物品'}
+        current = self.get_item_durability(item_id)
+        if current >= max_d:
+            return {'success': False, 'message': '该物品无需修理'}
+        cost = self.get_repair_cost(item_id)
+        if not self.has_item('metal', cost['metal']) or not self.has_item('materials', cost['materials']):
+            return {'success': False, 'message': f"材料不足，需要金属x{cost['metal']}、材料x{cost['materials']}"}
+        if self.stamina < 10:
+            return {'success': False, 'message': '体力不足，无法修理'}
+        self.remove_item('metal', cost['metal'])
+        self.remove_item('materials', cost['materials'])
+        self.modify_stamina(-10)
+        skill = self.skills.get('crafting', 1)
+        bonus = 0
+        location = self.game.world.get_current_location() if hasattr(self.game, 'world') else None
+        if location and 'workbench' in (getattr(location, 'structures', None) or []):
+            bonus = 8
+        restored = min(max_d, current + 12 + skill * 6 + bonus)
+        self.item_durability[item_id] = restored
+        self.gain_skill_exp('crafting', 8)
+        if hasattr(self.game, 'quests') and self.game.quests:
+            self.game.quests.update_quest_progress('item_repaired', item_id=item_id)
+        name = self.game.items.get_item_name(item_id)
+        return {'success': True, 'message': f"修理了{name}，耐久 {restored}/{max_d}"}
 
     def has_item(self, item_id, quantity=1):
         return self.inventory.get(item_id, 0) >= quantity
@@ -456,6 +547,8 @@ class Player:
         self.continuous_awake_hours = 0
         location = self.game.world.get_current_location()
         safety = location.safety_level if location else 5
+        if location and 'shelter' in (getattr(location, 'structures', None) or []):
+            safety = min(10, safety + 2)
         multiplier = 1.5 if safety >= 8 else 0.5 if safety <= 3 else 1.0
         stamina_recovery = min(50 * multiplier, self.max_stamina - self.stamina)
         health_recovery = min(25 * multiplier, self.max_health - self.health)
