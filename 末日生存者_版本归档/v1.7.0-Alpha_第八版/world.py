@@ -338,11 +338,15 @@ class GameWorld:
 
         safety = current.safety_level
         weather_mod = self.game.weather_effects.get("resource_mod", 1.0)
+        night = self.game.is_night() if hasattr(self.game, 'is_night') else False
+        enemy_weight = max(5, int(25 - safety * 2 * weather_mod))
+        if night:
+            enemy_weight = int(enemy_weight * 1.8)
         event_weights = {
             'resource': max(10, int(40 - safety * 3 * weather_mod)),
-            'enemy': max(5, int(25 - safety * 2 * weather_mod)),
-            'discovery': 15,
-            'npc': 10,
+            'enemy': enemy_weight,
+            'discovery': 10 if night else 15,
+            'npc': 6 if night else 10,
             'special': 5,
             'nothing': max(5, int(safety * 2 / weather_mod))
         }

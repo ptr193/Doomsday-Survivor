@@ -209,8 +209,10 @@ class QuestSystem:
             self._give_rewards(quest)
             self._unlock_new_quests(quest)
             self.game.player.stats['quests_completed'] += 1
-            self.game.add_game_log(f"🎉 完成任务: {quest['name']}！")
+            self.game.add_game_log(f"完成任务: {quest['name']}！")
             self.game.quests.update_quest_progress('quest_completed', quest_category=quest['category'])
+            if hasattr(self.game, 'try_unlock_stories'):
+                self.game.try_unlock_stories()
 
     def _give_rewards(self, quest):
         rewards = quest['rewards']
@@ -221,7 +223,7 @@ class QuestSystem:
             self.game.player.gain_skill_exp('crafting', exp // 3)
         if 'items' in rewards:
             for item_id, quantity in rewards['items'].items():
-                self.game.player.add_item(item_id, quantity)
+                self.game.player.add_item(item_id, quantity, force=True)
                 self.game.add_game_log(f"获得: {self.game.items.get_item_name(item_id)} x{quantity}")
         if 'reputation' in rewards:
             for faction, amount in rewards['reputation'].items():

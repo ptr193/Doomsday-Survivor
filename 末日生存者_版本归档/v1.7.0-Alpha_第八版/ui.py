@@ -261,6 +261,9 @@ class GameUI:
         if self.game.farming.can_plant(self.game.player.location):
             ttk.Button(self.surroundings_frame, text="农田",
                        command=self.show_farming).pack(fill="x", pady=1)
+        elif self.game.farming.is_farmable_location(self.game.player.location):
+            ttk.Button(self.surroundings_frame, text="开垦农田",
+                       command=lambda: self.game.perform_action("clear_farmland")).pack(fill="x", pady=1)
         connected = self.game.world.get_connected_locations() if loc else []
         for dest in connected:
             if dest.discovered:
@@ -523,12 +526,16 @@ class GameUI:
         if not self.game.player.initialized:
             return
         p = self.game.player
+        time_name = self.game.get_time_of_day_name() if hasattr(self.game, 'get_time_of_day_name') else ""
+        weight = p.get_inventory_weight()
+        max_weight = p.get_max_carry_weight()
+        overload = " 超重" if p.is_overencumbered() else ""
         status_text = (f"{p.name} | 生命: {p.health}/{p.max_health} | 体力: {p.stamina}/{p.max_stamina} | "
                        f"精神: {p.mental}/{p.max_mental} | 疲劳: {p.fatigue}/{self.game.max_fatigue} | "
-                       f"辐射: {self.game.radiation_level}% | 第{self.game.day_count}天 {self.game.format_time()} | "
-                       f"{self.game.get_weather_name()} | {self.game.get_season_name()}")
+                       f"辐射: {self.game.radiation_level}% | 第{self.game.day_count}天 {self.game.format_time()} {time_name} | "
+                       f"{self.game.get_weather_name()} | {self.game.get_season_name()} | 负重 {weight}/{max_weight}{overload}")
         self.status_label.config(text=status_text)
-        self.status_summary_label.config(text=f"生命{p.health}/{p.max_health}  体力{p.stamina}/{p.max_stamina}  精神{p.mental}/{p.max_mental}  金钱{p.money}")
+        self.status_summary_label.config(text=f"生命{p.health}/{p.max_health}  体力{p.stamina}/{p.max_stamina}  精神{p.mental}/{p.max_mental}  金钱{p.money}  负重{weight}/{max_weight}")
         self.update_quest_display()
         self.update_quick_items()
         self.update_surroundings()
@@ -688,7 +695,7 @@ class GameUI:
                             command=lambda: self.refresh_inventory()).pack(side="left", padx=5)
         tree_frame = ttk.Frame(parent)
         tree_frame.pack(fill="both", expand=True)
-        columns = ("名称", "数量", "类型", "描述")
+        columns = ("名称", "数量", "重量", "类型", "描述")
         self.inventory_tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=15)
         for col in columns:
             self.inventory_tree.heading(col, text=col)
@@ -702,6 +709,10 @@ class GameUI:
         ttk.Button(button_frame, text="使用", command=self.use_selected_item).pack(side="left", padx=5)
         ttk.Button(button_frame, text="丢弃", command=self.drop_selected_item).pack(side="left", padx=5)
         ttk.Button(button_frame, text="关闭", command=win.destroy).pack(side="right", padx=5)
+        weight = self.game.player.get_inventory_weight()
+        max_weight = self.game.player.get_max_carry_weight()
+        extra = "（超重，行动更耗体力）" if self.game.player.is_overencumbered() else ""
+        ttk.Label(parent, text=f"负重: {weight}/{max_weight}{extra}").pack(anchor="w", padx=8, pady=4)
         self.refresh_inventory()
     
     def refresh_inventory(self):
@@ -712,8 +723,9 @@ class GameUI:
                 if quantity > 0:
                     item_data = self.game.items.get_item_data(item_id)
                     if item_data:
+                        item_weight = float(item_data.get('weight', 0.5) or 0.5) * quantity
                         self.inventory_tree.insert("", "end", values=(
-                            item_data['name'], quantity, item_data.get('type', '未知'), item_data.get('description', '')
+                            item_data['name'], quantity, f"{item_weight:.1f}", item_data.get('type', '未知'), item_data.get('description', '')
                         ))
     
     def use_selected_item(self):
@@ -815,7 +827,11 @@ class GameUI:
             }.get(loc.terrain, "#cccccc")
             size = 12
             canvas.create_oval(loc.x-size, loc.y-size, loc.x+size, loc.y+size, fill=terrain_color, outline="white", width=1, tags=loc.id)
-            canvas.create_text(loc.x, loc.y-12, text=loc.name, fill="white", font=("Arial", 9), tags=loc.id)
+            label = loc.name
+            if loc.id in self.game.farming.farmlands:
+                label = f"{loc.name} [耕地]"
+                canvas.create_rectangle(loc.x-6, loc.y+10, loc.x+6, loc.y+16, fill="#c4a35a", outline="", tags=loc.id)
+            canvas.create_text(loc.x, loc.y-12, text=label, fill="white", font=("Arial", 9), tags=loc.id)
         def on_map_click(event):
             items = canvas.find_withtag("current")
             if items:
@@ -895,7 +911,11 @@ class GameUI:
         win.geometry("600x500")
         current_loc = self.game.player.location
         if not self.game.farming.can_plant(current_loc):
-            ttk.Label(win, text="当前位置不能种植").pack(pady=20)
+            if self.game.farming.is_farmable_location(current_loc):
+                ttk.Label(win, text="这里可以开垦农田，需要木锄或铁锄以及3个木材。").pack(pady=20)
+                ttk.Button(win, text="开垦耕地", command=lambda: [self.game.perform_action("clear_farmland"), win.destroy()]).pack(pady=6)
+            else:
+                ttk.Label(win, text="当前位置不能种植").pack(pady=20)
             ttk.Button(win, text="关闭", command=win.destroy).pack(pady=10)
             return
         status = self.game.farming.get_farmland_status(current_loc)
@@ -939,6 +959,8 @@ class GameUI:
     
     def create_management_tab(self, parent, status):
         ttk.Button(parent, text="全部浇水", command=lambda: self.game.perform_action("water_crops")).pack(pady=4)
+        ttk.Button(parent, text="施肥", command=lambda: self.game.perform_action("fertilize")).pack(pady=4)
+        ttk.Button(parent, text="扩展农田", command=lambda: self.game.perform_action("expand_farmland")).pack(pady=4)
         for plot in status.get('plots_details', []):
             frame = ttk.Frame(parent, relief="solid", padding=6)
             frame.pack(fill="x", padx=8, pady=4)

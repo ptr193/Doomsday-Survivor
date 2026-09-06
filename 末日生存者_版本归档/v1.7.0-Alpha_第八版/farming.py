@@ -73,22 +73,57 @@ class FarmingSystem:
             'watering_can': {'id': 'watering_can', 'name': '浇水壶', 'type': 'tool', 'efficiency': 1.0, 'durability': 30, 'description': '浇水工具'}
         }
 
+    def is_farmable_location(self, location_id):
+        loc = self.game.world.get_location_by_id(location_id) if hasattr(self.game, 'world') else None
+        if loc and loc.terrain in ('plain', 'forest', 'river'):
+            return True
+        return location_id in ('starting_area', 'abandoned_farm', 'south_plains', 'farmhouse')
+
     def initialize_farmlands(self):
-        """初始化农田"""
-        farmable_locations = ['starting_area', 'abandoned_farm', 'south_plains']
-        for location_id in farmable_locations:
-            self.farmlands[location_id] = {
-                'plots': [],
-                'fertility': random.randint(3, 7),
-                'water_source': random.choice([True, False]),
-                'max_plots': 5,
-                'upgrades': {'irrigation': False, 'fence': False, 'greenhouse': False}
-            }
-            for i in range(3):
-                self.farmlands[location_id]['plots'].append({
-                    'id': i, 'crop_type': None, 'planting_date': None, 'growth_stage': 0,
-                    'health': 100, 'water_level': 50, 'pest_infestation': 0, 'weeds': 0
-                })
+        """初始化农田，默认不预开垦，需玩家使用农具开垦"""
+        self.farmlands = {}
+
+    def create_empty_farmland(self, location_id, plots=1):
+        farmland = {
+            'plots': [],
+            'fertility': random.randint(3, 7),
+            'water_source': False,
+            'max_plots': 5,
+            'upgrades': {'irrigation': False, 'fence': False, 'greenhouse': False}
+        }
+        loc = self.game.world.get_location_by_id(location_id) if hasattr(self.game, 'world') else None
+        if loc and loc.terrain in ('river', 'plain'):
+            farmland['water_source'] = True
+        for i in range(plots):
+            farmland['plots'].append({
+                'id': i, 'crop_type': None, 'planting_date': None, 'growth_stage': 0,
+                'health': 100, 'water_level': 50, 'pest_infestation': 0, 'weeds': 0
+            })
+        self.farmlands[location_id] = farmland
+        return farmland
+
+    def clear_farmland(self, location_id):
+        if location_id in self.farmlands:
+            return {'success': False, 'message': '这里已经开垦过农田'}
+        if not self.is_farmable_location(location_id):
+            return {'success': False, 'message': '这里的土壤不适合开垦'}
+        hoe = 'iron_hoe' if self.game.player.has_item('iron_hoe') else 'wooden_hoe' if self.game.player.has_item('wooden_hoe') else None
+        if not hoe:
+            return {'success': False, 'message': '需要木锄或铁锄才能开垦农田'}
+        if not self.game.player.has_item('wood', 3):
+            return {'success': False, 'message': '需要3个木材来围出第一块耕地'}
+        if self.game.player.stamina < 20:
+            return {'success': False, 'message': '体力不足，无法开垦'}
+        self.game.player.remove_item('wood', 3)
+        self.game.player.degrade_item(hoe, 2)
+        self.create_empty_farmland(location_id, plots=1)
+        loc = self.game.world.get_location_by_id(location_id)
+        if loc and 'farmland' not in (loc.structures or []):
+            loc.structures.append('farmland')
+        self.game.player.gain_skill_exp('farming', 12)
+        if hasattr(self.game, 'quests') and self.game.quests:
+            self.game.quests.update_quest_progress('farmland_cleared', location_id=location_id)
+        return {'success': True, 'message': '你开垦出了一块耕地！'}
 
     def load_data(self, save_data):
         """加载农业系统数据"""
@@ -337,7 +372,7 @@ class FarmingSystem:
             return {'success': False, 'message': '作物已经完全枯萎'}
 
         harvest_product = crop_data['harvest_product']
-        self.game.player.add_item(harvest_product, final_yield)
+        self.game.player.add_item(harvest_product, final_yield, force=True)
 
         special_products = crop_data.get('special_products', {})
         for product, amount in special_products.items():
@@ -349,7 +384,7 @@ class FarmingSystem:
                 min_q, max_q = int(min_q), int(max_q)
             if random.random() < 0.7:
                 qty = random.randint(min_q, max(min_q, max_q))
-                self.game.player.add_item(product, qty)
+                self.game.player.add_item(product, qty, force=True)
 
         self.game.player.gain_skill_exp('farming', crop_data['exp_reward'])
         self.game.player.stats['crops_harvested'] += 1

@@ -272,15 +272,40 @@ class TextAdventureGame:
         for _ in range(max(0, days_passed)):
             self.new_day()
     
+    def is_night(self):
+        if not self.game_time:
+            return False
+        hour = self.game_time.hour
+        return hour < 6 or hour >= 18
+
+    def get_time_of_day_name(self):
+        if not self.game_time:
+            return "白天"
+        hour = self.game_time.hour
+        if 5 <= hour < 8:
+            return "清晨"
+        if 8 <= hour < 18:
+            return "白天"
+        if 18 <= hour < 22:
+            return "黄昏"
+        return "夜晚"
+
     def handle_time_advancement(self, hours):
         """处理时间推进相关事件"""
         hour = self.game_time.hour
-        if 6 <= hour < 18:  # 白天
+        was_night = self.player.night_penalty
+        if 6 <= hour < 18:
             base_temp = 20 if self.season == "spring" else 30 if self.season == "summer" else 15 if self.season == "autumn" else 5
             self.temperature = base_temp + random.randint(-3, 5)
-        else:  # 夜晚
+            self.player.night_penalty = False
+            if was_night:
+                self.add_game_log("天亮了，视野恢复，行动不再受夜间影响。")
+        else:
             base_temp = 10 if self.season == "spring" else 20 if self.season == "summer" else 5 if self.season == "autumn" else -5
             self.temperature = base_temp + random.randint(-5, 3)
+            self.player.night_penalty = True
+            if not was_night:
+                self.add_game_log("夜幕降临，体力消耗增加，遭遇敌人的几率上升。")
         
         self.player.handle_time_passage(hours)
         self.farming.update_crops_growth(hours)
@@ -302,6 +327,7 @@ class TextAdventureGame:
             self.npcs.restock_shops()
         self.trigger_random_event()
         self.achievements.check_daily_achievements()
+        self.try_unlock_stories()
         logging.info(f"进入第{self.day_count}天")
     
     def check_season_change(self):
@@ -484,6 +510,12 @@ class TextAdventureGame:
                 self.action_water_crops(kwargs.get('plot_id'))
             elif action_type == "remove_weeds":
                 self.action_remove_weeds(kwargs.get('plot_id'))
+            elif action_type == "clear_farmland":
+                self.action_clear_farmland()
+            elif action_type == "expand_farmland":
+                self.action_expand_farmland()
+            elif action_type == "fertilize":
+                self.action_fertilize()
             elif action_type == "move":
                 self.action_move(kwargs.get('location_id'))
             elif action_type == "use_item":
@@ -519,6 +551,8 @@ class TextAdventureGame:
         if self.player.stamina < 10:
             self.add_game_log("体力不足，无法探索。")
             return
+        if self.player.is_overencumbered():
+            self.add_game_log("负重过高，探索变得更加吃力。")
         current_location = self.world.get_current_location()
         self.add_game_log(f"你在{current_location.name}仔细探索...")
         self.player.modify_stamina(-10)
@@ -623,6 +657,28 @@ class TextAdventureGame:
         if result.get('success'):
             self.advance_time(0.5)
 
+    def action_clear_farmland(self):
+        result = self.farming.clear_farmland(self.player.location)
+        self.add_game_log(result['message'])
+        if result.get('success'):
+            self.advance_time(2)
+            self.player.modify_stamina(-20)
+            self.try_unlock_stories()
+
+    def action_expand_farmland(self):
+        result = self.farming.expand_farmland(self.player.location)
+        self.add_game_log(result['message'])
+        if result.get('success'):
+            self.advance_time(1)
+            self.player.modify_stamina(-12)
+
+    def action_fertilize(self):
+        result = self.farming.fertilize_soil(self.player.location)
+        self.add_game_log(result['message'])
+        if result.get('success'):
+            self.advance_time(0.5)
+            self.player.modify_stamina(-6)
+
     def action_remove_weeds(self, plot_id):
         result = self.farming.remove_weeds(self.player.location, plot_id)
         self.add_game_log(result['message'])
@@ -649,11 +705,16 @@ class TextAdventureGame:
         if not location_id:
             self.add_game_log("请指定要移动到的地点。")
             return
+        if self.player.is_overencumbered() and self.player.stamina < 12:
+            self.add_game_log("负重过高且体力不足，无法继续赶路。")
+            return
         move_result = self.world.move_to_location(location_id)
         if move_result['success']:
             self.add_game_log(move_result['message'])
-            self.advance_time(0.5)
+            hours = 1.0 if self.is_night() else 0.5
+            self.advance_time(hours)
             self.player.modify_stamina(-5)
+            self.try_unlock_stories()
         else:
             self.add_game_log(move_result['message'])
     
@@ -915,9 +976,11 @@ class TextAdventureGame:
         if event_type == "resource":
             resource_type = event_result['resource_type']
             amount = event_result['amount']
-            self.player.add_item(resource_type, amount)
             item_name = self.items.get_item_name(resource_type)
-            self.add_game_log(f"你找到了{amount}个{item_name}！")
+            if self.player.add_item(resource_type, amount):
+                self.add_game_log(f"你找到了{amount}个{item_name}！")
+            else:
+                self.add_game_log(f"发现了{amount}个{item_name}，但负重已满，无法带走。")
         elif event_type == "enemy":
             enemy_data = event_result['enemy_data']
             combat_result = self.combat.start_combat(self.player, enemy_data)
@@ -926,6 +989,7 @@ class TextAdventureGame:
             new_location = event_result['location']
             self.world.discover_location(new_location)
             self.add_game_log(f"你发现了一个新地点：{new_location.name}！")
+            self.try_unlock_stories()
         elif event_type == "npc":
             npc_data = event_result['npc_data']
             self.npcs.add_encountered_npc(npc_data)
@@ -946,13 +1010,30 @@ class TextAdventureGame:
             self.add_game_log(f"你击败了{combat_result['enemy_name']}！")
             if combat_result.get('loot'):
                 for item, amount in combat_result['loot'].items():
-                    self.player.add_item(item, amount)
-                    self.add_game_log(f"获得了{amount}个{self.items.get_item_name(item)}！")
+                    if self.player.add_item(item, amount):
+                        self.add_game_log(f"获得了{amount}个{self.items.get_item_name(item)}！")
+                    else:
+                        self.add_game_log(f"战利品{self.items.get_item_name(item)}x{amount}因负重已满未能带走。")
             self.achievements.check_combat_achievements(combat_result.get('enemy_name', ''))
+            self.try_unlock_stories()
         else:
             self.add_game_log("战斗失败！你受了重伤。")
             self.player.modify_health(-20)
             self.player.modify_mental(-15)
+
+    def try_unlock_stories(self):
+        if not getattr(self, 'story_reader', None):
+            return
+        unlocked = self.story_reader.check_unlock_conditions({
+            'location': self.player.location,
+            'discovered_locations': self.player.discovered_locations,
+            'quests_completed': self.quests.completed_quests if getattr(self, 'quests', None) else [],
+            'enemies_defeated': self.player.stats.get('enemies_defeated', 0),
+            'day_count': self.day_count,
+            'farmlands': list(self.farming.farmlands.keys()) if getattr(self, 'farming', None) else [],
+        })
+        for title in unlocked:
+            self.add_game_log(f"解锁故事：{title}")
     
     def start_autosave(self):
         def autosave_loop():

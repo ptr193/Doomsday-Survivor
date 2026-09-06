@@ -40,6 +40,42 @@ class StoryReader:
             return True
         return False
 
+    def get_unlock_rules(self):
+        return {
+            'guide_01': {'farmlands_min': 1},
+            'location_01': {'locations': ['old_road', 'trading_post', 'survivor_camp']},
+            'location_02': {'locations': ['ancient_ruins']},
+            'location_03': {'locations': ['abandoned_farm', 'farmhouse', 'south_plains']},
+            'character_01': {'locations': ['survivor_camp']},
+            'character_02': {'locations': ['research_lab']},
+            'origin_01': {'locations': ['research_lab']},
+            'origin_02': {'locations': ['trading_post', 'old_road']},
+            'origin_03': {'day_count_min': 5},
+            'mystery_01': {'locations': ['deep_forest', 'north_forest']},
+        }
+
+    def check_unlock_conditions(self, context):
+        newly = []
+        discovered = set(context.get('discovered_locations') or [])
+        farmlands = context.get('farmlands') or []
+        day_count = context.get('day_count', 1)
+        current = context.get('location')
+        for story_id, rule in self.get_unlock_rules().items():
+            if story_id not in self.stories or story_id in self.unlocked_stories:
+                continue
+            ok = True
+            if 'locations' in rule:
+                locs = set(rule['locations'])
+                ok = current in locs or bool(locs & discovered)
+            if ok and 'farmlands_min' in rule:
+                ok = len(farmlands) >= rule['farmlands_min']
+            if ok and 'day_count_min' in rule:
+                ok = day_count >= rule['day_count_min']
+            if ok and self.unlock_story(story_id):
+                story = self.stories.get(story_id) or {}
+                newly.append(story.get('title', story_id))
+        return newly
+
     def get_story(self, story_id):
         return self.stories.get(story_id)
 

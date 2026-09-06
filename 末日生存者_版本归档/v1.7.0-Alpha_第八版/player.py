@@ -67,7 +67,7 @@ class Player:
             self.night_penalty = False
             self.stamina_modifier = 1.0
             self.equipment = {'weapon': None, 'head': None, 'chest': None, 'legs': None, 'backpack': None, 'accessory1': None, 'accessory2': None}
-            self.inventory = {'food': 5, 'water': 5, 'materials': 10, 'medicine': 2, 'seeds': 6, 'wood': 4}
+            self.inventory = {'food': 5, 'water': 5, 'materials': 10, 'medicine': 2, 'seeds': 6, 'wood': 4, 'wooden_hoe': 1}
             self.item_durability = {}
             self.money = character_data.get('money', 50)
             self.radiation = 0
@@ -167,6 +167,8 @@ class Player:
         effective_amount = amount * self.stamina_modifier
         if self.night_penalty and effective_amount < 0:
             effective_amount *= 1.2
+        if effective_amount < 0:
+            effective_amount *= self.get_encumbrance_stamina_multiplier()
         if self.fatigue > 50 and effective_amount < 0:
             effective_amount *= (1 + self.fatigue / 100)
         old = self.stamina
@@ -262,7 +264,52 @@ class Player:
             self.game.add_game_log("警告：你没有水了，生命值和体力减少！")
         self.stats['days_survived'] += 1
 
-    def add_item(self, item_id, quantity=1):
+    def get_item_weight(self, item_id):
+        if not hasattr(self.game, 'items') or not self.game.items:
+            return 0.5
+        data = self.game.items.get_item_data(item_id)
+        return float((data or {}).get('weight', 0.5) or 0.5)
+
+    def get_inventory_weight(self):
+        total = 0.0
+        for item_id, quantity in self.inventory.items():
+            total += self.get_item_weight(item_id) * max(0, quantity)
+        for item_id in self.equipment.values():
+            if item_id:
+                total += self.get_item_weight(item_id)
+        return round(total, 1)
+
+    def get_max_carry_weight(self):
+        capacity = 20 + self.strength * 4
+        backpack = self.equipment.get('backpack')
+        if backpack and hasattr(self.game, 'items') and self.game.items:
+            data = self.game.items.get_item_data(backpack)
+            for effect in (data or {}).get('effects', []):
+                if effect.get('type') == 'carry_capacity':
+                    capacity += int(effect.get('value', 0))
+        return capacity
+
+    def is_overencumbered(self):
+        return self.get_inventory_weight() > self.get_max_carry_weight()
+
+    def get_encumbrance_stamina_multiplier(self):
+        max_w = max(1.0, float(self.get_max_carry_weight()))
+        ratio = self.get_inventory_weight() / max_w
+        if ratio > 1.2:
+            return 2.0
+        if ratio > 1.0:
+            return 1.5
+        return 1.0
+
+    def can_carry(self, item_id, quantity=1):
+        extra = self.get_item_weight(item_id) * max(0, quantity)
+        return self.get_inventory_weight() + extra <= self.get_max_carry_weight() * 1.2
+
+    def add_item(self, item_id, quantity=1, force=False):
+        if not force and not self.can_carry(item_id, quantity):
+            if hasattr(self.game, 'add_game_log'):
+                self.game.add_game_log("负重已满，无法再携带更多物品。")
+            return False
         if item_id in self.inventory:
             self.inventory[item_id] += quantity
         else:
@@ -393,7 +440,7 @@ class Player:
         for material, amount in recipe['materials'].items():
             self.remove_item(material, amount)
         for product, amount in recipe['products'].items():
-            self.add_item(product, amount)
+            self.add_item(product, amount, force=True)
         self.gain_skill_exp('crafting', recipe.get('exp', 10))
         self.stats['items_crafted'] += 1
         if hasattr(self.game, 'quests') and self.game.quests:
@@ -412,7 +459,7 @@ class Player:
         for mat, amt in materials.items():
             self.remove_item(mat, amt)
         for prod, amt in products.items():
-            self.add_item(prod, amt)
+            self.add_item(prod, amt, force=True)
         exp = recipe_data.get('exp', 10) * (tier // 2 + 0.5)
         self.gain_skill_exp('crafting', int(exp))
         self.stats['items_crafted'] += 1
@@ -501,7 +548,7 @@ class Player:
             return False
         old_item = self.equipment[slot]
         if old_item:
-            self.add_item(old_item)
+            self.add_item(old_item, force=True)
         self.equipment[slot] = item_id
         self.remove_item(item_id, 1)
         self.game.add_game_log(f"装备了{item_data['name']}")
@@ -513,7 +560,7 @@ class Player:
             return False
         item_data = self.game.items.get_item_data(item_id)
         if item_data:
-            self.add_item(item_id)
+            self.add_item(item_id, force=True)
             self.equipment[slot] = None
             self.game.add_game_log(f"卸下了{item_data['name']}")
         return True
@@ -534,11 +581,13 @@ class Player:
         fatigue_penalty = 1.0
         if self.fatigue > 50:
             fatigue_penalty = 1.0 - (self.fatigue - 50) / 100
+        encumbrance_penalty = 0.8 if self.is_overencumbered() else 1.0
+        night_penalty = 0.85 if self.night_penalty else 1.0
         return {
-            'attack': (total_stats['strength'] * 2 + total_stats['agility']) * fatigue_penalty,
+            'attack': (total_stats['strength'] * 2 + total_stats['agility']) * fatigue_penalty * night_penalty,
             'defense': (total_stats['endurance'] * 2 + total_stats['agility']) * fatigue_penalty,
-            'accuracy': (total_stats['agility'] * 3 + total_stats['luck']) * fatigue_penalty,
-            'dodge': (total_stats['agility'] * 2 + total_stats['luck']) * fatigue_penalty,
+            'accuracy': (total_stats['agility'] * 3 + total_stats['luck']) * fatigue_penalty * encumbrance_penalty * night_penalty,
+            'dodge': (total_stats['agility'] * 2 + total_stats['luck']) * fatigue_penalty * encumbrance_penalty * night_penalty,
             'critical': total_stats['luck'] * 2
         }
 

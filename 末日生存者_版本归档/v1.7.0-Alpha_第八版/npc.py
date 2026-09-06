@@ -144,10 +144,12 @@ class NPCSystem:
         if item_info['stock'] < quantity:
             return {'success': False, 'message': '库存不足'}
         total_price = item_info['price'] * quantity
+        if not self.game.player.can_carry(item_id, quantity):
+            return {'success': False, 'message': '负重已满，无法购买'}
         if not self.game.player.spend_money(total_price):
             return {'success': False, 'message': f'金钱不足，需要{total_price}'}
         item_info['stock'] -= quantity
-        self.game.player.add_item(item_id, quantity)
+        self.game.player.add_item(item_id, quantity, force=True)
         self.game.quests.update_quest_progress('trade_completed', shop_id=shop_id)
         logging.info(f"购买物品: {item_id} x{quantity}, 价格: {total_price}")
         return {'success': True, 'message': f"成功购买{quantity}个{self.game.items.get_item_name(item_id)}，花费{total_price}", 'item_id': item_id, 'quantity': quantity, 'total_price': total_price}

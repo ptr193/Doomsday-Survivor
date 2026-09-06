@@ -72,16 +72,74 @@ class CombatSystem:
                 self.add_combat_log("逃跑失败！敌人先手攻击！")
                 # 敌人先攻击一次
                 self.enemy_turn(player, enemy)
-        # 正常战斗
         rounds = 0
+        escaped = False
         while player.health > 0 and enemy['health'] > 0 and rounds < 20:
             rounds += 1
             self.add_combat_log(f"--- 第{rounds}回合 ---")
-            self.player_turn(player, enemy)
-            if enemy['health'] <= 0:
-                break
-            self.enemy_turn(player, enemy)
+            if any(d.get('type') == 'stun' for d in player.debuffs):
+                self.add_combat_log("你被眩晕了，无法行动！")
+                self.enemy_turn(player, enemy)
+            else:
+                action = self.choose_player_action(player, enemy)
+                if action == 'escape':
+                    if self.attempt_escape(player, enemy):
+                        escaped = True
+                        break
+                    self.enemy_turn(player, enemy)
+                    self.tick_combat_effects(player, enemy)
+                    continue
+                self.player_turn(player, enemy, action)
+                if enemy['health'] <= 0:
+                    break
+                self.enemy_turn(player, enemy)
+            self.tick_combat_effects(player, enemy)
+        if escaped:
+            return {'success': True, 'escaped': True, 'combat_log': self.combat_log.copy()}
         return self.resolve_combat(player, enemy, rounds)
+
+    def tick_combat_effects(self, player, enemy):
+        for debuff in player.debuffs[:]:
+            if debuff.get('type') in ('stun', 'poison', 'paralyze', 'slow', 'attack_debuff'):
+                if debuff.get('type') == 'poison':
+                    dmg = int(debuff.get('damage', 0))
+                    if dmg > 0:
+                        player.modify_health(-dmg)
+                        self.add_combat_log(f"中毒造成了{dmg}点伤害。")
+                debuff['duration'] = debuff.get('duration', 1) - 1
+                if debuff['duration'] <= 0:
+                    player.debuffs.remove(debuff)
+                    self.add_combat_log(f"{debuff.get('name', '效果')}消失了。")
+        for effect in enemy.get('status_effects', [])[:]:
+            effect['duration'] = effect.get('duration', 1) - 1
+            if effect['duration'] <= 0:
+                enemy['status_effects'].remove(effect)
+        for aid in list(enemy.get('cooldowns', {})):
+            enemy['cooldowns'][aid] = max(0, enemy['cooldowns'][aid] - 1)
+
+    def choose_player_action(self, player, enemy):
+        dialog = tk.Toplevel(self.game.root)
+        dialog.title("战斗")
+        dialog.geometry("420x280")
+        dialog.transient(self.game.root)
+        dialog.grab_set()
+        chosen = {'action': 'attack'}
+        ttk.Label(dialog, text=f"对战 {enemy['name']}  HP {enemy['health']}/{enemy['max_health']}").pack(pady=8)
+        ttk.Label(dialog, text=f"你的生命: {int(player.health)}/{player.max_health}").pack()
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(pady=12)
+
+        def pick(action):
+            chosen['action'] = action
+            dialog.destroy()
+
+        ttk.Button(btn_frame, text="攻击", command=lambda: pick('attack')).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text="防御", command=lambda: pick('defend')).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text="使用技能", command=lambda: pick('skill')).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text="使用道具", command=lambda: pick('item')).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text="逃跑", command=lambda: pick('escape')).pack(side="left", padx=4)
+        dialog.wait_window()
+        return chosen['action']
 
     def start_card_battle(self, player, enemy_data):
         """卡牌战斗模式（BOSS专用）"""
@@ -191,17 +249,77 @@ class CombatSystem:
         enemy['cooldowns'] = {}
         return enemy
 
-    def player_turn(self, player, enemy):
+    def player_turn(self, player, enemy, action='attack'):
+        if any(d.get('type') == 'stun' for d in player.debuffs):
+            self.add_combat_log("你被眩晕了，无法行动！")
+            return
+        if action == 'defend':
+            player.add_buff({"name": "防御姿态", "type": "defense", "value": 0.5, "duration": 1})
+            self.add_combat_log("你进入防御姿态，本回合受到的伤害降低。")
+            return
+        if action == 'skill':
+            self.use_player_skill(player, enemy)
+            self.check_enemy_ability_use(enemy, player, 'defensive')
+            return
+        if action == 'item':
+            if not self.use_combat_item(player):
+                self.add_combat_log("没有可用道具，改为普通攻击。")
+                action = 'attack'
+            else:
+                return
         attack = self.calculate_player_attack(player, enemy)
         damage = self.apply_damage(enemy, attack['damage'], attack['is_critical'])
         if attack['is_critical']:
-            self.add_combat_log(f"💥 暴击！你对{enemy['name']}造成了{damage}点伤害！")
+            self.add_combat_log(f"暴击！你对{enemy['name']}造成了{damage}点伤害！")
         else:
-            self.add_combat_log(f"⚔️ 你对{enemy['name']}造成了{damage}点伤害！")
+            self.add_combat_log(f"你对{enemy['name']}造成了{damage}点伤害！")
         weapon = player.equipment.get('weapon')
         if weapon and attack.get('is_hit', True):
             player.degrade_item(weapon, 1)
         self.check_enemy_ability_use(enemy, player, 'defensive')
+
+    def use_player_skill(self, player, enemy):
+        combat_level = player.skills.get('combat', 1)
+        if combat_level >= 3:
+            attack = self.calculate_player_attack(player, enemy)
+            damage = self.apply_damage(enemy, int(attack['damage'] * 1.6), attack['is_critical'])
+            player.modify_stamina(-8)
+            self.add_combat_log(f"你使出重击，对{enemy['name']}造成了{damage}点伤害！")
+        else:
+            attack = self.calculate_player_attack(player, enemy)
+            damage = self.apply_damage(enemy, attack['damage'], attack['is_critical'])
+            self.add_combat_log(f"战斗技能不足，普通攻击造成了{damage}点伤害。")
+        weapon = player.equipment.get('weapon')
+        if weapon:
+            player.degrade_item(weapon, 1)
+
+    def use_combat_item(self, player):
+        usable = []
+        for item_id, qty in player.inventory.items():
+            if qty <= 0:
+                continue
+            data = self.game.items.get_item_data(item_id) if hasattr(self.game, 'items') else None
+            if data and data.get('type') in ('medicine', 'food', 'drink'):
+                usable.append((item_id, data))
+        if not usable:
+            return False
+        dialog = tk.Toplevel(self.game.root)
+        dialog.title("使用道具")
+        dialog.geometry("360x280")
+        dialog.transient(self.game.root)
+        dialog.grab_set()
+        used = {'ok': False}
+        ttk.Label(dialog, text="选择战斗中使用的道具").pack(pady=8)
+        for item_id, data in usable[:8]:
+            def consume(iid=item_id):
+                result = player.use_item(iid)
+                self.add_combat_log(result.get('message', f"使用了{self.game.items.get_item_name(iid)}"))
+                used['ok'] = True
+                dialog.destroy()
+            ttk.Button(dialog, text=f"{data['name']} x{player.inventory.get(item_id, 0)}", command=consume).pack(fill="x", padx=16, pady=2)
+        ttk.Button(dialog, text="取消", command=dialog.destroy).pack(pady=8)
+        dialog.wait_window()
+        return used['ok']
 
     def enemy_turn(self, player, enemy):
         ability = self.check_enemy_ability_use(enemy, player, 'offensive')
@@ -262,11 +380,13 @@ class CombatSystem:
             return actual
         else:
             defense = target.get_combat_stats()['defense']
-            # 检查玩家防御buff
+            reduction = 0.0
             for buff in target.buffs:
                 if buff.get('type') == 'defense':
-                    defense = int(defense * (1 - buff['value']))
+                    reduction = max(reduction, float(buff.get('value', 0)))
             actual = max(1, damage - defense // 2)
+            if reduction:
+                actual = max(1, int(actual * (1 - reduction)))
             target.modify_health(-actual)
             for slot in ('chest', 'head', 'legs'):
                 armor = target.equipment.get(slot)
