@@ -1,0 +1,154 @@
+{
+  "main_01": {
+    "id": "main_01", "name": "初来乍到", "category": "main", "difficulty": 1,
+    "description": "在这个陌生的世界中生存下来，学习基本的生存技能。",
+    "objectives": [
+      {"id": "explore_start", "description": "探索起始区域", "type": "explore_location", "target": "starting_area", "required": 1, "current": 0},
+      {"id": "collect", "description": "收集5个基础物资", "type": "collect_items", "target": "materials", "required": 5, "current": 0},
+      {"id": "craft", "description": "制作第一个物品", "type": "craft_item", "target": "any", "required": 1, "current": 0}
+    ],
+    "prerequisites": [],
+    "rewards": {"exp": 100, "items": {"food": 5, "water": 5, "materials": 10}, "money": 50, "unlocks": ["main_02"]},
+    "time_limit": null, "repeatable": false, "giver_npc": "system",
+    "story_text": "在这个破碎的世界中，每一个幸存者都要从零开始。"
+  },
+  "main_02": {
+    "id": "main_02", "name": "建立据点", "category": "main", "difficulty": 2,
+    "description": "找到一个安全的场所建立你的第一个庇护所。",
+    "objectives": [
+      {"id": "disc_safe", "description": "发现3个安全地点（安全等级≥7）", "type": "discover_locations", "target": "safe", "required": 3, "current": 0},
+      {"id": "build", "description": "建造一个简易庇护所", "type": "craft_item", "target": "shelter", "required": 1, "current": 0},
+      {"id": "store", "description": "储备10个食物和10个水", "type": "collect_items", "target": "food_water", "required": 20, "current": 0}
+    ],
+    "prerequisites": ["main_01"],
+    "rewards": {"exp": 200, "items": {"cloth_armor": 1, "knife": 1}, "money": 100, "unlocks": ["main_03"]},
+    "time_limit": null, "repeatable": false, "giver_npc": "system"
+  },
+  "main_03": {
+    "id": "main_03", "name": "寻找其他幸存者", "category": "main", "difficulty": 3,
+    "description": "在这个孤独的世界中，找到其他幸存者建立联系。",
+    "objectives": [
+      {"id": "meet", "description": "遇到3个不同的NPC", "type": "meet_npcs", "target": "any", "required": 3, "current": 0},
+      {"id": "quest", "description": "完成一个幸存者给予的任务", "type": "complete_quests", "target": "side", "required": 1, "current": 0},
+      {"id": "trade", "description": "与商人进行交易", "type": "trade", "target": "any", "required": 1, "current": 0}
+    ],
+    "prerequisites": ["main_02"],
+    "rewards": {"exp": 300, "items": {"map_fragment": 2, "medicine": 3}, "money": 150, "unlocks": ["main_04"]},
+    "time_limit": null, "repeatable": false, "giver_npc": "system"
+  },
+  "side_01": {
+    "id": "side_01", "name": "老农的请求", "category": "side", "difficulty": 2,
+    "description": "帮助老农民恢复他的农田。",
+    "objectives": [
+      {"id": "clear_weeds", "description": "清除农田里的杂草", "type": "farm_action", "target": "remove_weeds", "required": 3, "current": 0},
+      {"id": "plant_crops", "description": "种植2种不同的作物", "type": "plant_crops", "target": "any", "required": 2, "current": 0},
+      {"id": "harvest_crops", "description": "收获5个农作物", "type": "harvest_crops", "target": "any", "required": 5, "current": 0}
+    ],
+    "prerequisites": [],
+    "rewards": {"exp": 150, "items": {"vegetable_seeds": 5, "fresh_food": 3}, "money": 80, "reputation": {"survivors": 10}},
+    "time_limit": 7, "repeatable": false, "giver_npc": "old_farmer"
+  },
+  "side_02": {
+    "id": "side_02", "name": "医生的困境", "category": "side", "difficulty": 3,
+    "description": "为诊所收集急需的医疗物资。",
+    "objectives": [
+      {"id": "collect_medicine", "description": "收集5个药品", "type": "collect_items", "target": "medicine", "required": 5, "current": 0},
+      {"id": "find_herbs", "description": "找到3个稀有草药", "type": "collect_items", "target": "rare_herbs", "required": 3, "current": 0},
+      {"id": "deliver", "description": "将物资送到诊所", "type": "deliver_items", "target": "clinic", "required": 1, "current": 0}
+    ],
+    "prerequisites": ["main_03"],
+    "rewards": {"exp": 200, "items": {"first_aid_kit": 1, "antidote": 2}, "money": 120, "reputation": {"survivors": 15}, "unlocks": ["side_03"]},
+    "time_limit": 5, "repeatable": false, "giver_npc": "doctor_li"
+  },
+  "daily_01": {
+    "id": "daily_01", "name": "日常收集", "category": "daily", "difficulty": 1,
+    "description": "收集一些基础生存物资。",
+    "objectives": [{"id": "collect", "description": "收集10个材料", "type": "collect_items", "target": "materials", "required": 10, "current": 0}],
+    "prerequisites": [], "rewards": {"exp": 50, "items": {"food": 2, "water": 2}, "money": 30},
+    "time_limit": 1, "repeatable": true, "giver_npc": "system"
+  },
+  "explore_01": {
+    "id": "explore_01", "name": "地图绘制者", "category": "exploration", "difficulty": 2,
+    "description": "探索未知区域，完善世界地图。",
+    "objectives": [
+      {"id": "discover", "description": "发现5个新地点", "type": "discover_locations", "target": "any", "required": 5, "current": 0},
+      {"id": "collect_maps", "description": "收集3个地图碎片", "type": "collect_items", "target": "map_fragment", "required": 3, "current": 0}
+    ],
+    "prerequisites": ["main_01"],
+    "rewards": {"exp": 180, "items": {"advanced_map": 1}, "money": 100, "unlocks": ["explore_02"]},
+    "time_limit": null, "repeatable": false, "giver_npc": "cartographer"
+  },
+  "craft_01": {
+    "id": "craft_01", "name": "工匠的试炼", "category": "crafting", "difficulty": 3,
+    "description": "证明你的制作技能，制作一些高级物品。",
+    "objectives": [
+      {"id": "craft_weapon", "description": "制作一把武器", "type": "craft_item", "target": "weapon", "required": 1, "current": 0},
+      {"id": "craft_armor", "description": "制作一件防具", "type": "craft_item", "target": "armor", "required": 1, "current": 0},
+      {"id": "craft_tool", "description": "制作一个工具", "type": "craft_item", "target": "tool", "required": 1, "current": 0}
+    ],
+    "prerequisites": ["main_02"],
+    "rewards": {"exp": 220, "items": {"advanced_tools": 1}, "money": 150, "reputation": {"craftsmen": 20}},
+    "time_limit": null, "repeatable": false, "giver_npc": "master_crafter"
+  },
+  "main_04": {
+    "id": "main_04", "name": "红色黎明的残响", "category": "main", "difficulty": 4,
+    "description": "前往研究实验室，搜集红色黎明计划的残页，揭开灾难的第一层真相。",
+    "objectives": [
+      {"id": "find_lab", "description": "发现研究实验室", "type": "explore_location", "target": "research_lab", "required": 1, "current": 0},
+      {"id": "talk_doctor", "description": "与李医生交谈", "type": "talk_npc", "target": "doctor_li", "required": 1, "current": 0},
+      {"id": "collect_notes", "description": "收集3份研究资料", "type": "collect_items", "target": "research_data", "required": 3, "current": 0}
+    ],
+    "prerequisites": ["main_03"],
+    "rewards": {"exp": 400, "items": {"radiation_pills": 2, "research_data": 1}, "money": 200, "unlocks": ["epic_01"]},
+    "time_limit": null, "repeatable": false, "giver_npc": "system",
+    "story_text": "实验室的警报早已停了，但地核的低鸣从未停止。"
+  },
+  "side_03": {
+    "id": "side_03", "name": "电台里的名字", "category": "side", "difficulty": 2,
+    "description": "帮电台员小陈修复广播，把幸存者的名字传出去。",
+    "objectives": [
+      {"id": "meet_chen", "description": "找到电台员小陈", "type": "talk_npc", "target": "radio_op_chen", "required": 1, "current": 0},
+      {"id": "collect_parts", "description": "收集4个电子元件", "type": "collect_items", "target": "electronic", "required": 4, "current": 0},
+      {"id": "broadcast", "description": "完成一次广播服务", "type": "special_action", "target": "broadcast", "required": 1, "current": 0}
+    ],
+    "prerequisites": ["main_03"],
+    "rewards": {"exp": 160, "items": {"battery": 2}, "money": 90, "reputation": {"survivors": 12}},
+    "time_limit": null, "repeatable": false, "giver_npc": "radio_op_chen"
+  },
+  "side_04": {
+    "id": "side_04", "name": "河岸的补给", "category": "side", "difficulty": 2,
+    "description": "向渔夫老海请教钓鱼，并为营地带回河鲜。",
+    "objectives": [
+      {"id": "talk_hai", "description": "与渔夫老海交谈", "type": "talk_npc", "target": "fisher_hai", "required": 1, "current": 0},
+      {"id": "get_tips", "description": "接受一次钓鱼指导", "type": "special_action", "target": "fishing_tips", "required": 1, "current": 0},
+      {"id": "collect_fish", "description": "收集3份新鲜食物", "type": "collect_items", "target": "fresh_food", "required": 3, "current": 0}
+    ],
+    "prerequisites": ["main_01"],
+    "rewards": {"exp": 140, "items": {"fishing_rod": 1, "fresh_food": 2}, "money": 70, "reputation": {"survivors": 8}},
+    "time_limit": null, "repeatable": false, "giver_npc": "fisher_hai"
+  },
+  "epic_01": {
+    "id": "epic_01", "name": "蚀日讨伐", "category": "epic", "difficulty": 8,
+    "description": "传说中的变异巨兽在废土深处苏醒。击杀它，才能证明你配得上史诗之名。",
+    "objectives": [
+      {"id": "slay_behemoth", "description": "击败变异巨兽", "type": "defeat_enemies", "target": "mutant_behemoth", "required": 1, "current": 0}
+    ],
+    "prerequisites": ["main_01", "main_02", "main_03"],
+    "rewards": {"exp": 800, "items": {"advanced_alloy": 3, "ancient_artifact": 1, "military_ration": 5}, "money": 500, "unlocks": ["epic_02"]},
+    "time_limit": null, "repeatable": false, "giver_npc": "system",
+    "story_text": "巨兽踏过的地方，连辐射尘都会安静片刻。"
+  },
+  "epic_02": {
+    "id": "epic_02", "name": "红色黎明", "category": "epic", "difficulty": 9,
+    "description": "深入研究实验室，击败锈蚀巨像，收集红色黎明的最终记录。",
+    "objectives": [
+      {"id": "enter_lab", "description": "抵达研究实验室", "type": "explore_location", "target": "research_lab", "required": 1, "current": 0},
+      {"id": "slay_colossus", "description": "击败锈蚀巨像", "type": "defeat_enemies", "target": "rust_colossus", "required": 1, "current": 0},
+      {"id": "read_dawn", "description": "阅读红色黎明残卷", "type": "read_document", "target": "red_dawn_01", "required": 1, "current": 0}
+    ],
+    "prerequisites": ["epic_01"],
+    "rewards": {"exp": 1200, "items": {"ancient_artifact": 1, "radiation_pills": 3, "research_data": 2}, "money": 800},
+    "time_limit": null, "repeatable": false, "giver_npc": "system",
+    "story_text": "当警报再次响起时，你才明白红色从来不是朝霞。"
+  }
+}
