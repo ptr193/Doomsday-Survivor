@@ -1,0 +1,38 @@
+{
+  "help": {
+    "description": "显示帮助信息",
+    "action": "help"
+  },
+  "status": {
+    "description": "显示当前状态",
+    "action": "status"
+  },
+  "inventory": {
+    "description": "显示背包内容",
+    "action": "inventory"
+  },
+  "map": {
+    "description": "显示地图",
+    "action": "map"
+  },
+  "quit": {
+    "description": "退出游戏",
+    "action": "quit"
+  },
+  "sleep": {
+    "description": "睡觉休息",
+    "action": "sleep"
+  },
+  "eat": {
+    "description": "进食",
+    "action": "eat"
+  },
+  "drink": {
+    "description": "喝水",
+    "action": "drink"
+  },
+  "explore": {
+    "description": "探索当前区域",
+    "action": "explore"
+  }
+}
