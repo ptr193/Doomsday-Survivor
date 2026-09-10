@@ -1,0 +1,47 @@
+{
+  "wild_rabbit": {
+    "id": "wild_rabbit", "name": "野兔", "habitats": ["plain", "forest"],
+    "loot": {"food": [1, 2], "animal_hide": [0, 1]},
+    "description": "警惕的小型食草动物"
+  },
+  "mutant_crow": {
+    "id": "mutant_crow", "name": "变异鸦", "habitats": ["plain", "forest", "urban"],
+    "loot": {"food": [1, 1], "toxin_gland": [0, 1]},
+    "description": "成群盘旋的辐射乌鸦"
+  },
+  "rad_boar": {
+    "id": "rad_boar", "name": "辐射野猪", "habitats": ["forest", "plain"],
+    "loot": {"food": [2, 4], "animal_hide": [1, 2]},
+    "description": "性情暴躁的变异野猪"
+  },
+  "river_otter": {
+    "id": "river_otter", "name": "河狸", "habitats": ["river"],
+    "loot": {"food": [1, 2], "animal_hide": [1, 1]},
+    "description": "出没于河边的皮毛动物"
+  },
+  "glow_stag": {
+    "id": "glow_stag", "name": "辉光鹿", "habitats": ["forest"],
+    "loot": {"food": [2, 3], "glow_spore": [0, 1], "animal_hide": [1, 1]},
+    "description": "角上附着孢子的稀有鹿类"
+  },
+  "ash_fox": {
+    "id": "ash_fox", "name": "灰烬狐", "habitats": ["plain", "urban"],
+    "loot": {"food": [1, 2], "animal_hide": [0, 1], "cloth": [0, 1]},
+    "description": "在废墟间穿梭的警惕狐狸"
+  },
+  "scrap_beetle": {
+    "id": "scrap_beetle", "name": "废铁甲虫", "habitats": ["urban", "mountain"],
+    "loot": {"materials": [1, 3], "metal": [0, 2]},
+    "description": "甲壳裹着锈铁碎片的甲虫"
+  },
+  "marsh_toad": {
+    "id": "marsh_toad", "name": "沼蟾", "habitats": ["swamp", "river"],
+    "loot": {"food": [1, 2], "toxin_gland": [0, 1], "peat_brick": [0, 1]},
+    "description": "潜伏在泥沼中的肥大蟾蜍"
+  },
+  "salt_hare": {
+    "id": "salt_hare", "name": "盐晶兔", "habitats": ["wasteland", "plain"],
+    "loot": {"food": [1, 2], "animal_hide": [0, 1], "rare_minerals": [0, 1]},
+    "description": "皮毛结着盐霜的废土野兔"
+  }
+}
