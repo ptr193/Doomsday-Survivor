@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import tkinter as tk
-from tkinter import ttk, messagebox
-from game import TextAdventureGame
 import os
 import sys
 import logging
 import random
 
 VERSION = "1.9.0-Alpha"
-GAME_ROOT = os.path.dirname(os.path.abspath(__file__))
+try:
+    from utils import app_root
+    GAME_ROOT = app_root()
+except Exception:
+    GAME_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 def _platform_logs_dir():
     try:
@@ -48,6 +49,8 @@ def check_directories():
             os.makedirs(os.path.join(GAME_ROOT, extra), exist_ok=True)
 
 def show_loading(parent):
+    import tkinter as tk
+    from tkinter import ttk
     loading = tk.Toplevel(parent)
     loading.title("加载中")
     loading.geometry("400x200")
@@ -75,10 +78,33 @@ def show_loading(parent):
     loading.update()
     return loading
 
+def run_headless_check():
+    setup_logging()
+    check_directories()
+    from mod_manager import ModManager
+    dummy = type('G', (), {})()
+    mm = ModManager(dummy)
+    mm.initialize()
+    items = mm.get_data('items') or {}
+    terrains = mm.get_data('terrains') or {}
+    if not items or not terrains:
+        raise RuntimeError('data not loaded')
+    print(f"CHECK OK {VERSION}")
+    print(f"items={len(items)} terrains={len(terrains)}")
+    return 0
+
 def main():
+    if '--version' in sys.argv:
+        print(VERSION)
+        return
+    if '--check' in sys.argv:
+        return run_headless_check()
     os.chdir(GAME_ROOT)
     setup_logging()
     try:
+        import tkinter as tk
+        from tkinter import ttk, messagebox
+        from game import TextAdventureGame
         logging.info(f"启动末日生存者游戏 v{VERSION}...")
         check_directories()
         root = tk.Tk()

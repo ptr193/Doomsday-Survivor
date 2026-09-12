@@ -2,7 +2,8 @@
 
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
-import logging,os
+import logging, os, sys
+from mobile import MobileLayout, MobileTheme, GestureHandler, MobileCombatBar, FontScale
 
 class GameUI:
     def __init__(self, root, game):
@@ -23,6 +24,11 @@ class GameUI:
         self.map_canvas = None
         self.view_toggle_button = None
         self.ui_scale = 1.0
+        self.mobile_layout = None
+        self.mobile_theme = MobileTheme('wasteland_dark')
+        self.gesture = GestureHandler()
+        self.font_scale = FontScale()
+        self.combat_bar = MobileCombatBar()
         
         self.setup_window()
 
@@ -51,8 +57,14 @@ class GameUI:
         self.root.title(f"末日生存者 v{self.game.version}")
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
+        plat = getattr(sys, 'platform', 'linux')
+        self.mobile_layout = MobileLayout(screen_width, screen_height, platform=plat)
         self.ui_scale = self.compute_ui_scale(screen_width, screen_height)
-        self.root.geometry(self.compute_window_geometry(screen_width, screen_height))
+        if self.mobile_layout.is_mobile:
+            self.root.geometry(f"{screen_width}x{screen_height}")
+            self.apply_mobile_theme()
+        else:
+            self.root.geometry(self.compute_window_geometry(screen_width, screen_height))
         min_w = max(640, int(800 * min(1.0, self.ui_scale)))
         min_h = max(480, int(600 * min(1.0, self.ui_scale)))
         self.root.minsize(min_w, min_h)
@@ -103,6 +115,28 @@ class GameUI:
         style.configure("Status.TLabel", font=("Arial", status), foreground="#7F8C8D")
         style.configure("Action.TButton", font=("Arial", normal, "bold"), padding=(pad_x, pad_y))
         style.configure("Danger.TButton", font=("Arial", normal, "bold"), foreground="white", background="#E74C3C")
+        if getattr(self, 'mobile_layout', None) and self.mobile_layout.is_mobile:
+            self.apply_mobile_theme()
+
+    def apply_mobile_theme(self, name=None):
+        if name:
+            self.mobile_theme = MobileTheme(name)
+        colors = self.mobile_theme.colors
+        try:
+            self.root.configure(bg=colors['bg'])
+        except Exception:
+            pass
+        try:
+            style = ttk.Style()
+            style.configure("Title.TLabel", foreground=colors['text'], background=colors['bg'])
+            style.configure("Subtitle.TLabel", foreground=colors['text'], background=colors['bg'])
+            style.configure("Normal.TLabel", foreground=colors['text'], background=colors['bg'])
+            style.configure("Status.TLabel", foreground=colors['text2'], background=colors['bg'])
+            style.configure("Action.TButton", foreground=colors['bg'], background=colors['safe'])
+            style.configure("Danger.TButton", foreground=colors['text'], background=colors['danger'])
+        except Exception:
+            pass
+        return self.mobile_theme
     
     def clear_interface(self):
         if self.current_frame:

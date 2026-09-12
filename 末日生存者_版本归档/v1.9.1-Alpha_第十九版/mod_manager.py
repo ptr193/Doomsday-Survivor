@@ -8,7 +8,11 @@ class ModManager:
     """MOD管理器，负责加载和管理所有外部数据"""
     def __init__(self, game):
         self.game = game
-        root_dir = os.path.dirname(os.path.abspath(__file__))
+        try:
+            from utils import resource_root
+            root_dir = resource_root()
+        except Exception:
+            root_dir = os.path.dirname(os.path.abspath(__file__))
         self.base_path = os.path.join(root_dir, "data")
         self.system_mods_path = os.path.join(root_dir, "mods", "system")
         self.global_mods_path = os.path.join(root_dir, "mods", "global")

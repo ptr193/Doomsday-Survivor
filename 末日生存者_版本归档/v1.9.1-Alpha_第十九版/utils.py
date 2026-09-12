@@ -552,6 +552,18 @@ class PlatformPaths:
         return os.path.join(*parts)
 
 
+def resource_root():
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        return sys._MEIPASS
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+def app_root():
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(os.path.abspath(sys.executable))
+    return os.path.dirname(os.path.abspath(__file__))
+
+
 class I18n:
     FALLBACK = 'zh'
     STRINGS = {
